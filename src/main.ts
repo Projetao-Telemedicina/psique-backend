@@ -1,7 +1,8 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { createRequire } from 'node:module';
 import { parseEnv } from 'node:util';
 import {
   DocumentBuilder,
@@ -11,6 +12,7 @@ import {
 import { AppModule } from './app.module';
 
 const logger = new Logger('Swagger');
+const nodeRequire = createRequire(join(dirname(__filename), 'main.js'));
 
 function loadEnvironment(): void {
   const envPath = join(process.cwd(), '.env');
@@ -39,17 +41,11 @@ function getApiDocsUi(): 'swagger' | 'scalar' {
   return value === 'swagger' ? 'swagger' : 'scalar';
 }
 
-async function setupScalar(
+function setupScalar(
   app: Awaited<ReturnType<typeof NestFactory.create>>,
   document: OpenAPIObject,
-): Promise<void> {
-  const dynamicImporter = new Function(
-    'specifier',
-    'return import(specifier);',
-  ) as (specifier: string) => Promise<unknown>;
-  const scalarModule = (await dynamicImporter(
-    '@scalar/express-api-reference',
-  )) as {
+): void {
+  const scalarModule = nodeRequire('@scalar/express-api-reference') as {
     apiReference?: (options: { content: OpenAPIObject }) => unknown;
   };
 
@@ -76,9 +72,9 @@ function setupSwaggerUi(
   });
 }
 
-async function setupApiDocumentation(
+function setupApiDocumentation(
   app: Awaited<ReturnType<typeof NestFactory.create>>,
-): Promise<void> {
+): void {
   if (!isSwaggerDocsEnabled()) {
     logger.log(
       `Documentacao desabilitada. Defina SWAGGER_DOCS=true para expor /${getSwaggerRoute()}.`,
@@ -113,7 +109,7 @@ async function setupApiDocumentation(
   }
 
   try {
-    await setupScalar(app, swaggerDocument);
+    setupScalar(app, swaggerDocument);
     logger.log(`Documentacao disponivel em /${getSwaggerRoute()} (Scalar).`);
   } catch (error) {
     setupSwaggerUi(app, swaggerDocument);
@@ -133,8 +129,16 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
 
-  await setupApiDocumentation(app);
+  setupApiDocumentation(app);
 
   await app.listen(process.env.PORT ?? 3000);
 }
-bootstrap();
+
+void bootstrap().catch((error: unknown) => {
+  if (error instanceof Error) {
+    logger.error(error.message, error.stack);
+    return;
+  }
+
+  logger.error('Falha ao iniciar a aplicacao.');
+});
