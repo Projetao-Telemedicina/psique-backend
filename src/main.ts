@@ -1,19 +1,139 @@
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { parseEnv } from 'node:util';
+import {
+  DocumentBuilder,
+  type OpenAPIObject,
+  SwaggerModule,
+} from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+const logger = new Logger('Swagger');
+
+function loadEnvironment(): void {
+  const envPath = join(process.cwd(), '.env');
+
+  if (!existsSync(envPath)) {
+    return;
+  }
+
+  // Make the local .env take precedence over inherited process variables.
+  Object.assign(process.env, parseEnv(readFileSync(envPath, 'utf8')));
+}
+
+function getSwaggerRoute(): string {
+  return process.env.SWAGGER_ROUTE ?? 'api';
+}
+
+function isSwaggerDocsEnabled(): boolean {
+  const value = (process.env.SWAGGER_DOCS ?? '').toLowerCase();
+
+  return ['1', 'true', 'yes', 'on'].includes(value);
+}
+
+function getApiDocsUi(): 'swagger' | 'scalar' {
+  const value = (process.env.API_DOCS_UI ?? 'scalar').toLowerCase();
+
+  return value === 'swagger' ? 'swagger' : 'scalar';
+}
+
+async function setupScalar(
+  app: Awaited<ReturnType<typeof NestFactory.create>>,
+  document: OpenAPIObject,
+): Promise<void> {
+  const dynamicImporter = new Function(
+    'specifier',
+    'return import(specifier);',
+  ) as (specifier: string) => Promise<unknown>;
+  const scalarModule = (await dynamicImporter(
+    '@scalar/express-api-reference',
+  )) as {
+    apiReference?: (options: { content: OpenAPIObject }) => unknown;
+  };
+
+  if (typeof scalarModule.apiReference !== 'function') {
+    throw new Error('Scalar nao esta disponivel no projeto.');
+  }
+
+  app.use(
+    `/${getSwaggerRoute()}`,
+    scalarModule.apiReference({
+      content: document,
+    }) as Parameters<typeof app.use>[1],
+  );
+}
+
+function setupSwaggerUi(
+  app: Awaited<ReturnType<typeof NestFactory.create>>,
+  document: OpenAPIObject,
+): void {
+  SwaggerModule.setup(getSwaggerRoute(), app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  });
+}
+
+async function setupApiDocumentation(
+  app: Awaited<ReturnType<typeof NestFactory.create>>,
+): Promise<void> {
+  if (!isSwaggerDocsEnabled()) {
+    logger.log(
+      `Documentacao desabilitada. Defina SWAGGER_DOCS=true para expor /${getSwaggerRoute()}.`,
+    );
+
+    return;
+  }
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Psique Backend API')
     .setDescription('Documentacao da API do projeto Psique Backend')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Informe o token abaixo.',
+      },
+      'jwt-auth',
+    )
     .build();
 
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api', app, swaggerDocument);
+  const apiDocsUi = getApiDocsUi();
+
+  if (apiDocsUi === 'swagger') {
+    setupSwaggerUi(app, swaggerDocument);
+    logger.log(`Documentacao disponivel em /${getSwaggerRoute()} (Swagger UI).`);
+
+    return;
+  }
+
+  try {
+    await setupScalar(app, swaggerDocument);
+    logger.log(`Documentacao disponivel em /${getSwaggerRoute()} (Scalar).`);
+  } catch (error) {
+    setupSwaggerUi(app, swaggerDocument);
+
+    logger.warn(
+      `API_DOCS_UI=scalar, mas o Scalar nao foi carregado. Usando Swagger UI em /${getSwaggerRoute()}.`,
+    );
+
+    if (error instanceof Error) {
+      logger.debug(error.message);
+    }
+  }
+}
+
+async function bootstrap() {
+  loadEnvironment();
+
+  const app = await NestFactory.create(AppModule);
+
+  await setupApiDocumentation(app);
 
   await app.listen(process.env.PORT ?? 3000);
 }
