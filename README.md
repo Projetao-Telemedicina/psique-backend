@@ -44,6 +44,14 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
+## API documentation (Swagger)
+
+After starting the application, access the interactive API docs at:
+
+```text
+http://localhost:3000/api
+```
+
 ## Run tests
 
 ```bash
