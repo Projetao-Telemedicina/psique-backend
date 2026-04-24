@@ -6,6 +6,12 @@ on:
       - opened
       - reopened
       - ready_for_review
+      - synchronize
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint:
