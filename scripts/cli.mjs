@@ -5,6 +5,7 @@ import { stdin as input, stdout as output, exit } from 'node:process';
 import { createInterface } from 'node:readline/promises';
 
 const projectRoot = process.cwd();
+const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const jestBin = './node_modules/jest/bin/jest.js';
 const unitJestBaseArgs = ['--experimental-vm-modules', jestBin];
 const e2eJestBaseArgs = [
@@ -17,6 +18,23 @@ const e2eJestBaseArgs = [
 const rl = createInterface({ input, output });
 let isRlClosed = false;
 
+const color = {
+  reset: '\x1b[0m',
+  bold: '\x1b[1m',
+  dim: '\x1b[2m',
+  cyan: '\x1b[36m',
+  blue: '\x1b[34m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  red: '\x1b[31m',
+  magenta: '\x1b[35m',
+  gray: '\x1b[90m',
+};
+
+function paint(text, ...styles) {
+  return `${styles.join('')}${text}${color.reset}`;
+}
+
 function closeRl() {
   if (isRlClosed) {
     return;
@@ -26,47 +44,32 @@ function closeRl() {
   isRlClosed = true;
 }
 
+function printBanner() {
+  output.write(
+    `\n${paint('========================================', color.cyan)}\n` +
+      `${paint('         Psique Backend CLI', color.bold, color.cyan)}\n` +
+      `${paint('========================================', color.cyan)}\n`,
+  );
+}
+
 function printSection(title) {
-  output.write(`\n=== ${title} ===\n`);
+  output.write(
+    `\n${paint('----------------------------------------', color.blue)}\n` +
+      `${paint(title, color.bold, color.blue)}\n` +
+      `${paint('----------------------------------------', color.blue)}\n`,
+  );
 }
 
 function printInfo(message) {
-  output.write(`${message}\n`);
+  output.write(`${paint('>', color.cyan)} ${message}\n`);
 }
 
-function quoteWindowsArg(value) {
-  if (/^[a-zA-Z0-9_./:=\\-]+$/.test(value)) {
-    return value;
-  }
-
-  return `"${value.replace(/"/g, '\\"')}"`;
+function printSuccess(message) {
+  output.write(`${paint('[OK]', color.green, color.bold)} ${paint(message, color.green)}\n`);
 }
 
-function getSpawnCommand(command, args) {
-  if (process.platform !== 'win32') {
-    return {
-      command,
-      args,
-      options: {
-        cwd: projectRoot,
-        stdio: 'inherit',
-        shell: false,
-      },
-    };
-  }
-
-  const commandLine = [command, ...args].map(quoteWindowsArg).join(' ');
-
-  return {
-    command: 'cmd.exe',
-    args: ['/d', '/s', '/c', commandLine],
-    options: {
-      cwd: projectRoot,
-      stdio: 'inherit',
-      shell: false,
-      windowsVerbatimArguments: true,
-    },
-  };
+function printWarning(message) {
+  output.write(`${paint('[!]', color.yellow, color.bold)} ${paint(message, color.yellow)}\n`);
 }
 
 function listFilesRecursive(directory) {
@@ -181,14 +184,18 @@ async function askChoice(title, options, config = {}) {
     printSection(title);
 
     options.forEach((option, index) => {
-      output.write(`${index + 1}. ${option.label}\n`);
+      output.write(
+        `${paint(String(index + 1).padStart(2, ' '), color.magenta, color.bold)} ${option.label}\n`,
+      );
     });
 
     if (allowBack) {
-      output.write(`0. ${backLabel}\n`);
+      output.write(`${paint(' 0', color.gray, color.bold)} ${paint(backLabel, color.gray)}\n`);
     }
 
-    const answer = (await rl.question('\nSelect an option: ')).trim();
+    const answer = (
+      await rl.question(`\n${paint('Select an option', color.bold, color.cyan)} ${paint('>', color.cyan)} `)
+    ).trim();
     const parsed = Number(answer);
 
     if (allowBack && parsed === 0) {
@@ -199,7 +206,7 @@ async function askChoice(title, options, config = {}) {
       return options[parsed - 1].value;
     }
 
-    printInfo('Invalid option. Please try again.');
+    printWarning('Invalid option. Please try again.');
   }
 }
 
@@ -207,12 +214,17 @@ function runCommand(command, args, label) {
   return new Promise((resolvePromise, rejectPromise) => {
     printSection(label);
 
-    const spawnData = getSpawnCommand(command, args);
-    const child = spawn(spawnData.command, spawnData.args, spawnData.options);
+    const resolvedCommand = command === 'npm' ? npmCommand : command;
+    const child = spawn(resolvedCommand, args, {
+      cwd: projectRoot,
+      stdio: 'inherit',
+      shell: process.platform === 'win32' && resolvedCommand.endsWith('.cmd'),
+    });
 
     child.on('error', rejectPromise);
     child.on('exit', (code) => {
       if (code === 0) {
+        printSuccess(label);
         resolvePromise();
         return;
       }
@@ -230,7 +242,8 @@ async function ensureDevelopmentSetup() {
   if (!existsSync(generatedClientPath)) {
     await runCommand('npm', ['run', 'prisma:generate'], 'Generating Prisma Client');
   } else {
-    printInfo('\nPrisma Client already exists. Skipping generate.');
+    output.write('\n');
+    printInfo('Prisma Client already exists. Skipping generate.');
   }
 
   await runCommand(
@@ -259,7 +272,7 @@ async function runProjectMenu() {
     { label: 'Full setup and start in watch mode', value: 'setup-dev' },
     { label: 'Start only with npm run start:dev', value: 'start-dev' },
     { label: 'Start in debug mode', value: 'start-debug' },
-    { label: 'Start production build', value: 'start-prod' },
+    { label: 'Build and start in production mode', value: 'start-prod' },
   ]);
 
   if (!action) {
@@ -284,6 +297,7 @@ async function runProjectMenu() {
     return;
   }
 
+  await runCommand('npm', ['run', 'build'], 'Building project');
   await runCommand('npm', ['run', 'start:prod'], 'Starting project in production mode');
 }
 
@@ -309,8 +323,8 @@ async function runIndividualTest(kind, moduleEntry) {
   if (fileChoice.type === 'module-all') {
     const paths = moduleEntry.tests.map((testEntry) => testEntry.relativePath);
     const args = kind === 'unit' ? [...unitJestBaseArgs] : [...e2eJestBaseArgs];
-
     args.push('--runTestsByPath', ...paths);
+
     closeRl();
 
     if (kind === 'e2e') {
@@ -390,7 +404,7 @@ async function runTestsMenu() {
     return;
   }
 
-  const scope = await askChoice('Execution mode', [
+  const scope = await askChoice('Execution Mode', [
     { label: 'Run all', value: 'all' },
     { label: 'Choose individual tests', value: 'individual' },
   ]);
@@ -403,7 +417,11 @@ async function runTestsMenu() {
     closeRl();
 
     if (kind === 'unit') {
-      await runCommand('npm', ['run', 'test'], 'Running all unit tests');
+      await runCommand(
+        process.execPath,
+        [...unitJestBaseArgs, '--runInBand'],
+        'Running all unit tests',
+      );
       return;
     }
 
@@ -414,12 +432,13 @@ async function runTestsMenu() {
   const modules = discoverTests(kind);
 
   if (modules.length === 0) {
-    printInfo('\nNo tests were found for this category.');
+    output.write('\n');
+    printWarning('No tests were found for this category.');
     return;
   }
 
   const selectedModuleName = await askChoice(
-    `${kind === 'unit' ? 'Unit' : 'E2E'} test modules`,
+    `${kind === 'unit' ? 'Unit' : 'E2E'} Test Modules`,
     modules.map((moduleEntry) => ({
       label: `${moduleEntry.moduleName} (${moduleEntry.tests.length} file(s))`,
       value: moduleEntry.moduleName,
@@ -433,7 +452,8 @@ async function runTestsMenu() {
   const moduleEntry = modules.find((entry) => entry.moduleName === selectedModuleName);
 
   if (!moduleEntry) {
-    printInfo('\nModule not found.');
+    output.write('\n');
+    printWarning('Module not found.');
     return;
   }
 
@@ -441,33 +461,27 @@ async function runTestsMenu() {
 }
 
 function printHelp() {
-  output.write(`
-================================
- Psique Backend CLI
-================================
-
-1. Run Project
-   Full setup:
-   Starts the development database, generates Prisma Client if needed,
-   applies pending migrations, and starts the app in watch mode.
-
-   Quick modes:
-   Start only in watch mode, debug mode, or production mode.
-
-2. Run Tests
-   Unit tests:
-   Run everything or pick a specific module, file, and test case.
-
-   E2E tests:
-   Run everything locally with an isolated disposable database,
-   or choose a specific module, file, and test case.
-
-3. Help
-   Shows this help screen.
-`);
+  output.write(
+    `${paint('1. Run Project', color.bold, color.green)}\n` +
+      `   ${paint('Full setup', color.yellow)}\n` +
+      `   Starts the development database, generates Prisma Client if needed,\n` +
+      `   applies pending migrations, and starts the app in watch mode.\n\n` +
+      `   ${paint('Quick modes', color.yellow)}\n` +
+      `   Start only in watch mode, debug mode, or production mode.\n\n` +
+      `${paint('2. Run Tests', color.bold, color.green)}\n` +
+      `   ${paint('Unit tests', color.yellow)}\n` +
+      `   Run everything or pick a specific module, file, and test case.\n\n` +
+      `   ${paint('E2E tests', color.yellow)}\n` +
+      `   Run everything locally with an isolated disposable database,\n` +
+      `   or choose a specific module, file, and test case.\n\n` +
+      `${paint('3. Help', color.bold, color.green)}\n` +
+      `   Shows this help screen.\n`,
+  );
 }
 
 async function main() {
+  printBanner();
+
   if (process.argv[2] === 'help') {
     printHelp();
     closeRl();
@@ -475,7 +489,7 @@ async function main() {
   }
 
   const action = await askChoice(
-    'Psique Backend CLI',
+    'Main Menu',
     [
       { label: 'Run project', value: 'run-project' },
       { label: 'Run tests', value: 'run-tests' },
@@ -500,7 +514,16 @@ async function main() {
 
 main()
   .catch((error) => {
-    output.write(`\nError: ${error instanceof Error ? error.message : 'unexpected failure'}\n`);
+    const message = error instanceof Error ? error.message : 'unexpected failure';
+
+    output.write(`\n${paint('Error:', color.red, color.bold)} ${message}\n`);
+
+    if (message.includes('docker_engine') || message.includes('Acesso negado')) {
+      output.write(
+        `${paint('Hint:', color.yellow, color.bold)} Docker may require elevated permissions in this terminal.\n`,
+      );
+    }
+
     closeRl();
     exit(1);
   })
