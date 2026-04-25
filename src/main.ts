@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 import { parseEnv } from 'node:util';
 import {
   DocumentBuilder,
@@ -12,7 +13,8 @@ import {
 import { AppModule } from './app.module.js';
 
 const logger = new Logger('Swagger');
-const nodeRequire = createRequire(join(dirname(__filename), 'main.js'));
+const currentFilePath = fileURLToPath(import.meta.url);
+const nodeRequire = createRequire(join(dirname(currentFilePath), 'main.js'));
 
 function loadEnvironment(): void {
   const envPath = join(process.cwd(), '.env');

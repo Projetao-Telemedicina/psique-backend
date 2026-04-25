@@ -32,18 +32,73 @@ $ npm install
 $ npm run prisma:generate
 ```
 
+## Environment files
+
+- Copy `.env.example` to `.env` for local development.
+- Copy `.env.test.example` to `.env.test` for local e2e tests.
+- Do not commit real `.env` or `.env.test` files.
+
+## Local development database
+
+The development PostgreSQL database runs with Docker using `postgres:16`.
+
+```bash
+# start the development database
+$ npm run db:dev:up
+
+# generate the Prisma client
+$ npm run prisma:generate
+
+# apply migrations to the development database
+$ npm run prisma:migrate:dev
+
+# start the API in watch mode
+$ npm run start:dev
+```
+
+The development `DATABASE_URL` is:
+
+```text
+postgresql://psique:psique@localhost:54320/psique_dev?schema=public
+```
+
+To stop the local development database:
+
+```bash
+$ npm run db:dev:down
+```
+
+## Local test database
+
+The e2e database is isolated from development and uses a separate Docker Compose file.
+
+```bash
+# start the test database
+$ npm run db:test:up
+
+# apply migrations to the test database
+$ npm run prisma:migrate:test
+```
+
+The test `DATABASE_URL` is:
+
+```text
+postgresql://test:test@localhost:5433/psique_test?schema=public
+```
+
+To stop and discard the local test database:
+
+```bash
+$ npm run db:test:down
+```
+
 ## Prisma 7
 
-This project is configured to use Prisma ORM 7 with PostgreSQL and the `@prisma/adapter-pg` driver adapter.
-
-Before running migrations or starting database-backed features, make sure `DATABASE_URL` is set in `.env`.
+This project uses Prisma ORM 7 with PostgreSQL and the `@prisma/adapter-pg` driver adapter.
 
 ```bash
 # generate the client
 $ npm run prisma:generate
-
-# create a local migration
-$ npm run prisma:migrate
 
 # inspect data locally
 $ npm run prisma:studio
@@ -76,11 +131,46 @@ http://localhost:3000/api
 # unit tests
 $ npm run test
 
-# e2e tests
+# e2e tests with Docker + isolated database
+$ npm run test:e2e:local
+
+# e2e tests for CI/already-prepared database
 $ npm run test:e2e
 
 # test coverage
 $ npm run test:cov
+```
+
+`npm run test:e2e:local` performs this flow automatically:
+
+1. Starts the disposable PostgreSQL test container.
+2. Runs `prisma generate`.
+3. Applies Prisma migrations to the test database.
+4. Executes the e2e suite.
+5. Stops and removes the test container.
+
+## CI workflow
+
+The GitHub Actions workflow has three jobs:
+
+- `lint`: runs `npm ci`, `npm run prisma:generate`, and `npm run lint`.
+- `unit-tests`: runs `npm ci`, `npm run prisma:generate`, and `npm run test`.
+- `e2e-tests`: loads the CI env file, starts a disposable PostgreSQL 16 container with Docker Compose, runs `npm ci`, `npm run prisma:generate`, `npx prisma migrate deploy`, and `npm run test:e2e`.
+
+The CI does not use production or staging databases. All CI environment variables come from the `CI_ENV_FILE` GitHub Secret.
+
+Required GitHub Secret:
+
+- `secrets.CI_ENV_FILE`
+
+Example content:
+
+```env
+NODE_ENV=test
+DATABASE_URL=postgresql://test:test@localhost:5432/psique_test?schema=public
+CI_POSTGRES_DB=psique_test
+CI_POSTGRES_USER=test
+CI_POSTGRES_PASSWORD=test
 ```
 
 ## Deployment

@@ -8,9 +8,14 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
+    "db:dev:up": "node ./scripts/docker-compose.mjs up dev",
+    "db:dev:down": "node ./scripts/docker-compose.mjs down dev",
+    "db:test:up": "node ./scripts/docker-compose.mjs up test",
+    "db:test:down": "node ./scripts/docker-compose.mjs down test",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
+    "prisma:generate": "node ./scripts/prisma.mjs generate",
+    "prisma:migrate:dev": "node ./scripts/prisma.mjs --env-file=.env migrate dev",
+    "prisma:migrate:test": "node ./scripts/prisma.mjs --env-file=.env.test migrate deploy",
     "prisma:studio": "prisma studio",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -21,7 +26,9 @@
     "test:watch": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --watch",
     "test:cov": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --coverage",
     "test:debug": "node --experimental-vm-modules --inspect-brk ./node_modules/jest/bin/jest.js --runInBand",
-    "test:e2e": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config ./test/jest-e2e.json"
+    "test:e2e": "npm run test:e2e:ci",
+    "test:e2e:local": "node ./scripts/test-e2e-local.mjs",
+    "test:e2e:ci": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --config ./test/jest-e2e.json"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

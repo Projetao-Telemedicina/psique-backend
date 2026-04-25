@@ -17,4 +17,148 @@ import * as Prisma from './internal/prismaNamespaceBrowser.js'
 export { Prisma }
 export * as $Enums from './enums.js'
 export * from './enums.js';
-
+/**
+ * Model User
+ * 
+ */
+export type User = Prisma.UserModel
+/**
+ * Model PatientProfile
+ * 
+ */
+export type PatientProfile = Prisma.PatientProfileModel
+/**
+ * Model ProfessionalProfile
+ * 
+ */
+export type ProfessionalProfile = Prisma.ProfessionalProfileModel
+/**
+ * Model ProfessionalRequest
+ * 
+ */
+export type ProfessionalRequest = Prisma.ProfessionalRequestModel
+/**
+ * Model ProfessionalRequestDocument
+ * 
+ */
+export type ProfessionalRequestDocument = Prisma.ProfessionalRequestDocumentModel
+/**
+ * Model ProfessionalAvailability
+ * 
+ */
+export type ProfessionalAvailability = Prisma.ProfessionalAvailabilityModel
+/**
+ * Model ProfessionalBreak
+ * 
+ */
+export type ProfessionalBreak = Prisma.ProfessionalBreakModel
+/**
+ * Model ProfessionalCalendarEvent
+ * 
+ */
+export type ProfessionalCalendarEvent = Prisma.ProfessionalCalendarEventModel
+/**
+ * Model Appointment
+ * 
+ */
+export type Appointment = Prisma.AppointmentModel
+/**
+ * Model AppointmentRescheduleRequest
+ * 
+ */
+export type AppointmentRescheduleRequest = Prisma.AppointmentRescheduleRequestModel
+/**
+ * Model Review
+ * 
+ */
+export type Review = Prisma.ReviewModel
+/**
+ * Model ChatRoom
+ * 
+ */
+export type ChatRoom = Prisma.ChatRoomModel
+/**
+ * Model Message
+ * 
+ */
+export type Message = Prisma.MessageModel
+/**
+ * Model MessageAttachment
+ * 
+ */
+export type MessageAttachment = Prisma.MessageAttachmentModel
+/**
+ * Model Coupon
+ * 
+ */
+export type Coupon = Prisma.CouponModel
+/**
+ * Model UserCoupon
+ * 
+ */
+export type UserCoupon = Prisma.UserCouponModel
+/**
+ * Model Wallet
+ * 
+ */
+export type Wallet = Prisma.WalletModel
+/**
+ * Model WalletTransaction
+ * 
+ */
+export type WalletTransaction = Prisma.WalletTransactionModel
+/**
+ * Model PaymentMethod
+ * 
+ */
+export type PaymentMethod = Prisma.PaymentMethodModel
+/**
+ * Model Plan
+ * 
+ */
+export type Plan = Prisma.PlanModel
+/**
+ * Model Subscription
+ * 
+ */
+export type Subscription = Prisma.SubscriptionModel
+/**
+ * Model PromotionPlan
+ * 
+ */
+export type PromotionPlan = Prisma.PromotionPlanModel
+/**
+ * Model ProfessionalPromotion
+ * 
+ */
+export type ProfessionalPromotion = Prisma.ProfessionalPromotionModel
+/**
+ * Model Payment
+ * 
+ */
+export type Payment = Prisma.PaymentModel
+/**
+ * Model VideoCallSession
+ * 
+ */
+export type VideoCallSession = Prisma.VideoCallSessionModel
+/**
+ * Model PanicRequest
+ * 
+ */
+export type PanicRequest = Prisma.PanicRequestModel
+/**
+ * Model PanicRequestOffer
+ * 
+ */
+export type PanicRequestOffer = Prisma.PanicRequestOfferModel
+/**
+ * Model DiaryEntry
+ * 
+ */
+export type DiaryEntry = Prisma.DiaryEntryModel
+/**
+ * Model Notification
+ * 
+ */
+export type Notification = Prisma.NotificationModel
