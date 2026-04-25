@@ -1,3 +1,3 @@
-export * from './app.get-hello.swagger';
+export * from './app.get-hello.swagger.js';
 
-export * from './app.tags.swagger';
+export * from './app.tags.swagger.js';

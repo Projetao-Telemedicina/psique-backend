@@ -9,7 +9,7 @@ import {
   type OpenAPIObject,
   SwaggerModule,
 } from '@nestjs/swagger';
-import { AppModule } from './app.module';
+import { AppModule } from './app.module.js';
 
 const logger = new Logger('Swagger');
 const nodeRequire = createRequire(join(dirname(__filename), 'main.js'));
