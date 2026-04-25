@@ -8,6 +8,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
+    "cli": "node ./scripts/cli.mjs",
     "db:dev:up": "node ./scripts/docker-compose.mjs up dev",
     "db:dev:down": "node ./scripts/docker-compose.mjs down dev",
     "db:test:up": "node ./scripts/docker-compose.mjs up test",
