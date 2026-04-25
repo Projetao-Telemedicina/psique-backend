@@ -30,7 +30,22 @@
 ```bash
 $ npm install
 $ npm run prisma:generate
+$ npm run cli
 ```
+
+## Project CLI
+
+The project includes an interactive CLI to help with local development flows.
+
+```bash
+$ npm run cli
+```
+
+Available areas:
+
+- Run the project with a complete setup flow or quick run modes.
+- Run unit or e2e tests, including module-level and individual test selection.
+- Show a built-in help screen.
 
 ## Environment files
 
