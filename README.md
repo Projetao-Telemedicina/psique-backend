@@ -155,24 +155,22 @@ The GitHub Actions workflow has three jobs:
 
 - `lint`: runs `npm ci`, `npm run prisma:generate`, and `npm run lint`.
 - `unit-tests`: runs `npm ci`, `npm run prisma:generate`, and `npm run test`.
-- `e2e-tests`: starts a disposable PostgreSQL 16 service container, loads the CI env file for application-level test configuration, runs `npm ci`, `npm run prisma:generate`, `npx prisma migrate deploy`, and `npm run test:e2e`.
+- `e2e-tests`: loads the CI env file, starts a disposable PostgreSQL 16 container with Docker Compose, runs `npm ci`, `npm run prisma:generate`, `npx prisma migrate deploy`, and `npm run test:e2e`.
 
-The CI does not use production or staging databases. PostgreSQL service container settings come from a few dedicated GitHub Variables/Secrets, while application-level test settings can still come from `CI_ENV_FILE`.
+The CI does not use production or staging databases. All CI environment variables come from the `CI_ENV_FILE` GitHub Secret.
 
-Required GitHub configuration:
+Required GitHub Secret:
 
-- `vars.CI_POSTGRES_DB`
-- `vars.CI_POSTGRES_USER`
-- `secrets.CI_POSTGRES_PASSWORD`
-- `secrets.CI_DATABASE_URL`
-- `secrets.CI_E2E_DATABASE_URL`
 - `secrets.CI_ENV_FILE`
 
-Recommended `CI_ENV_FILE` content:
+Example content:
 
 ```env
 NODE_ENV=test
-EXAMPLE_API_KEY=replace-me-if-needed
+DATABASE_URL=postgresql://test:test@localhost:5432/psique_test?schema=public
+CI_POSTGRES_DB=psique_test
+CI_POSTGRES_USER=test
+CI_POSTGRES_PASSWORD=test
 ```
 
 ## Deployment
