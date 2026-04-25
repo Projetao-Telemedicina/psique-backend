@@ -9,7 +9,214 @@
 * 🟢 You can import this file directly.
 */
 
+export const Role = {
+  ADMIN: 'ADMIN',
+  PROFESSIONAL: 'PROFESSIONAL',
+  PATIENT: 'PATIENT'
+} as const
+
+export type Role = (typeof Role)[keyof typeof Role]
 
 
-// This file is empty because there are no enums in the schema.
-export {}
+export const UserStatus = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  BLOCKED: 'BLOCKED',
+  PENDING_APPROVAL: 'PENDING_APPROVAL'
+} as const
+
+export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus]
+
+
+export const ProfessionalApprovalStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED'
+} as const
+
+export type ProfessionalApprovalStatus = (typeof ProfessionalApprovalStatus)[keyof typeof ProfessionalApprovalStatus]
+
+
+export const OnlineStatus = {
+  OFFLINE: 'OFFLINE',
+  ONLINE: 'ONLINE'
+} as const
+
+export type OnlineStatus = (typeof OnlineStatus)[keyof typeof OnlineStatus]
+
+
+export const RequestStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED'
+} as const
+
+export type RequestStatus = (typeof RequestStatus)[keyof typeof RequestStatus]
+
+
+export const AppointmentStatus = {
+  SCHEDULED: 'SCHEDULED',
+  RESCHEDULE_REQUESTED: 'RESCHEDULE_REQUESTED',
+  CANCELED: 'CANCELED',
+  COMPLETED: 'COMPLETED',
+  NO_SHOW: 'NO_SHOW'
+} as const
+
+export type AppointmentStatus = (typeof AppointmentStatus)[keyof typeof AppointmentStatus]
+
+
+export const AppointmentCanceledBy = {
+  PATIENT: 'PATIENT',
+  PROFESSIONAL: 'PROFESSIONAL',
+  ADMIN: 'ADMIN',
+  SYSTEM: 'SYSTEM'
+} as const
+
+export type AppointmentCanceledBy = (typeof AppointmentCanceledBy)[keyof typeof AppointmentCanceledBy]
+
+
+export const CalendarEventType = {
+  PERSONAL_COMMITMENT: 'PERSONAL_COMMITMENT',
+  BLOCKED_TIME: 'BLOCKED_TIME',
+  BREAK: 'BREAK'
+} as const
+
+export type CalendarEventType = (typeof CalendarEventType)[keyof typeof CalendarEventType]
+
+
+export const ChatRoomStatus = {
+  ACTIVE: 'ACTIVE',
+  ARCHIVED: 'ARCHIVED',
+  READ_ONLY: 'READ_ONLY'
+} as const
+
+export type ChatRoomStatus = (typeof ChatRoomStatus)[keyof typeof ChatRoomStatus]
+
+
+export const MessageType = {
+  TEXT: 'TEXT',
+  IMAGE: 'IMAGE',
+  FILE: 'FILE',
+  SYSTEM: 'SYSTEM'
+} as const
+
+export type MessageType = (typeof MessageType)[keyof typeof MessageType]
+
+
+export const CouponCategory = {
+  SINGLE_APPOINTMENT: 'SINGLE_APPOINTMENT',
+  PLAN_SUBSCRIPTION: 'PLAN_SUBSCRIPTION'
+} as const
+
+export type CouponCategory = (typeof CouponCategory)[keyof typeof CouponCategory]
+
+
+export const CouponDiscountType = {
+  PERCENTAGE: 'PERCENTAGE',
+  FIXED: 'FIXED'
+} as const
+
+export type CouponDiscountType = (typeof CouponDiscountType)[keyof typeof CouponDiscountType]
+
+
+export const WalletTransactionType = {
+  REFUND_CREDIT: 'REFUND_CREDIT',
+  APPOINTMENT_PAYMENT: 'APPOINTMENT_PAYMENT',
+  MANUAL_ADJUSTMENT: 'MANUAL_ADJUSTMENT',
+  PLAN_PAYMENT: 'PLAN_PAYMENT'
+} as const
+
+export type WalletTransactionType = (typeof WalletTransactionType)[keyof typeof WalletTransactionType]
+
+
+export const WalletTransactionDirection = {
+  CREDIT: 'CREDIT',
+  DEBIT: 'DEBIT'
+} as const
+
+export type WalletTransactionDirection = (typeof WalletTransactionDirection)[keyof typeof WalletTransactionDirection]
+
+
+export const PaymentMethodType = {
+  CARD: 'CARD',
+  PIX: 'PIX',
+  BOLETO: 'BOLETO',
+  WALLET: 'WALLET'
+} as const
+
+export type PaymentMethodType = (typeof PaymentMethodType)[keyof typeof PaymentMethodType]
+
+
+export const PaymentStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  FAILED: 'FAILED',
+  REFUNDED: 'REFUNDED',
+  PARTIALLY_REFUNDED: 'PARTIALLY_REFUNDED',
+  CANCELED: 'CANCELED'
+} as const
+
+export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus]
+
+
+export const PaymentPurpose = {
+  APPOINTMENT: 'APPOINTMENT',
+  PLAN_SUBSCRIPTION: 'PLAN_SUBSCRIPTION',
+  PROFILE_PROMOTION: 'PROFILE_PROMOTION'
+} as const
+
+export type PaymentPurpose = (typeof PaymentPurpose)[keyof typeof PaymentPurpose]
+
+
+export const PromotionStatus = {
+  PENDING: 'PENDING',
+  ACTIVE: 'ACTIVE',
+  EXPIRED: 'EXPIRED',
+  CANCELED: 'CANCELED',
+  FAILED: 'FAILED'
+} as const
+
+export type PromotionStatus = (typeof PromotionStatus)[keyof typeof PromotionStatus]
+
+
+export const SubscriptionStatus = {
+  PENDING: 'PENDING',
+  ACTIVE: 'ACTIVE',
+  OVERDUE: 'OVERDUE',
+  CANCELED: 'CANCELED',
+  EXPIRED: 'EXPIRED'
+} as const
+
+export type SubscriptionStatus = (typeof SubscriptionStatus)[keyof typeof SubscriptionStatus]
+
+
+export const VideoCallStatus = {
+  WAITING: 'WAITING',
+  IN_PROGRESS: 'IN_PROGRESS',
+  FINISHED: 'FINISHED',
+  CANCELED: 'CANCELED'
+} as const
+
+export type VideoCallStatus = (typeof VideoCallStatus)[keyof typeof VideoCallStatus]
+
+
+export const PanicRequestStatus = {
+  SEARCHING: 'SEARCHING',
+  ACCEPTED: 'ACCEPTED',
+  TIMEOUT: 'TIMEOUT',
+  CANCELED: 'CANCELED',
+  FINISHED: 'FINISHED'
+} as const
+
+export type PanicRequestStatus = (typeof PanicRequestStatus)[keyof typeof PanicRequestStatus]
+
+
+export const PanicOfferStatus = {
+  SENT: 'SENT',
+  VIEWED: 'VIEWED',
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED',
+  EXPIRED: 'EXPIRED'
+} as const
+
+export type PanicOfferStatus = (typeof PanicOfferStatus)[keyof typeof PanicOfferStatus]
