@@ -1,6 +1,6 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
-import { ApiCommonErrorResponses } from '../../common/swagger';
+import { ApiCommonErrorResponses } from '../../common/swagger/index.js';
 
 export function GetHelloApiResponsesOperation(): MethodDecorator {
   return applyDecorators(

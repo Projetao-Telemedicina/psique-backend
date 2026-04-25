@@ -1,1 +1,1 @@
-export * from './swagger-error.decorators';
+export * from './swagger-error.decorators.js';

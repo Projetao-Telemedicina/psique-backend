@@ -29,6 +29,24 @@
 
 ```bash
 $ npm install
+$ npm run prisma:generate
+```
+
+## Prisma 7
+
+This project is configured to use Prisma ORM 7 with PostgreSQL and the `@prisma/adapter-pg` driver adapter.
+
+Before running migrations or starting database-backed features, make sure `DATABASE_URL` is set in `.env`.
+
+```bash
+# generate the client
+$ npm run prisma:generate
+
+# create a local migration
+$ npm run prisma:migrate
+
+# inspect data locally
+$ npm run prisma:studio
 ```
 
 ## Compile and run the project
