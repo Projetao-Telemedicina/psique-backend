@@ -18,6 +18,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
       - name: Checkout
         uses: actions/checkout@v4
 
