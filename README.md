@@ -59,7 +59,7 @@ $ npm run start:dev
 The development `DATABASE_URL` is:
 
 ```text
-postgresql://psique:psique@localhost:5432/psique_dev?schema=public
+postgresql://psique:psique@localhost:54320/psique_dev?schema=public
 ```
 
 To stop the local development database:
