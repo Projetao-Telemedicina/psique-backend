@@ -237,7 +237,7 @@ function runCommand(command, args, label) {
 async function ensureDevelopmentSetup() {
   await runCommand('npm', ['run', 'db:dev:up'], 'Starting development database');
 
-  const generatedClientPath = resolve(projectRoot, 'src/generated/prisma/client.ts');
+  const generatedClientPath = resolve(projectRoot, 'node_modules/.prisma/client/index.js');
 
   if (!existsSync(generatedClientPath)) {
     await runCommand('npm', ['run', 'prisma:generate'], 'Generating Prisma Client');
