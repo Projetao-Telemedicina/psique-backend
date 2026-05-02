@@ -1,31 +1,53 @@
-import { CreatePatientProfileDto } from './create-patient-profile.dto';
-import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { Role } from '@prisma/client';
+import { CreatePatientProfileDto } from '@/patients/dto/create-patient-profile.dto';
 
 export class CreateUserDto {
   @IsString()
-  name: string;
+  @IsNotEmpty()
+  @MaxLength(120)
+  name!: string;
 
   @IsEmail()
-  email: string;
+  @IsNotEmpty()
+  @MaxLength(255)
+  email!: string;
 
   @IsString()
-  password: string;
+  @IsNotEmpty()
+  @MinLength(8)
+  @MaxLength(72)
+  password!: string;
 
   @IsEnum(Role)
-  role: Role;
+  role!: Role;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(14)
   cpf?: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(20)
   phone?: string;
 
-  // profissional
   @IsOptional()
+  @IsString()
+  @MaxLength(20)
   crp?: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(80)
   specialty?: string;
 
   @IsOptional()
