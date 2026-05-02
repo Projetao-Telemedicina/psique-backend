@@ -6,13 +6,11 @@ import { UpdatePatientProfileDto } from './dto/update-patient-profile.dto';
 export class PatientsController {
   constructor(private readonly patientsService: PatientsService) {}
 
-  // GET /patients/:userId/profile
   @Get(':userId/profile')
   getProfile(@Param('userId', ParseUUIDPipe) userId: string) {
     return this.patientsService.getFullProfile(userId);
   }
 
-  // PATCH /patients/:userId/profile
   @Patch(':userId/profile')
   update(
     @Param('userId', ParseUUIDPipe) userId: string, 

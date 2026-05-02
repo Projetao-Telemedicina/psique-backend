@@ -6,7 +6,6 @@ import { UpdatePatientProfileDto } from './dto/update-patient-profile.dto';
 export class PatientsService {
   constructor(private prisma: PrismaService) {}
 
-  // Busca o perfil completo (Dados de User + Dados de Patient)
   async getFullProfile(userId: string) {
     const profile = await this.prisma.patientProfile.findUnique({
       where: { userId },
@@ -26,7 +25,6 @@ export class PatientsService {
     return profile;
   }
 
-  // Atualiza apenas os dados clínicos/perfil do paciente
   async updateProfile(userId: string, dto: UpdatePatientProfileDto) {
 
     const exists = await this.prisma.patientProfile.findUnique({

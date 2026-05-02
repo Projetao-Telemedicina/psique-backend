@@ -20,13 +20,11 @@ export class UsersController {
      }
    }
 
-  // Visualizar cadastro específico do paciente
   @Get('patient/:id')
   findPatient(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.findPatient(id);
   }
 
-  // Editar cadastro do usuário
   @Patch(':id')
   update(@Param('id', ParseUUIDPipe) id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
