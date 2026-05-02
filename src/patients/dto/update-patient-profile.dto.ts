@@ -1,4 +1,3 @@
-import { IsOptional, IsString, IsDateString, IsBoolean } from 'class-validator';
 import { PartialType } from '@nestjs/mapped-types';
 import { CreatePatientProfileDto } from './create-patient-profile.dto';
 import { PickType } from '@nestjs/swagger';
