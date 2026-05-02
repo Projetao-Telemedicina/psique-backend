@@ -13,7 +13,7 @@ export class UsersController {
      try {
        return await this.usersService.create(createUserDto);
      } catch (error) {
-       if (error.code === 'P2002' || error.meta) {
+       if (error instanceof ConflictException) {
          throw new ConflictException('Email, CPF ou CRP já cadastrado');
        }
        throw error;
