@@ -52,4 +52,44 @@ export class CreateUserDto {
 
   @IsOptional()
   patientProfile?: CreatePatientProfileDto;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  bio?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(9)
+  cep?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2)
+  state?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  neighborhood?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  street?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  number?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  complement?: string;
 }
