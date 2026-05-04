@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateProfessionalProfileDto } from './dto/create-professional-profile.dto';
 import { UpdateProfessionalProfileDto } from './dto/update-professional-profile.dto';
-import { PrismaService } from '@/prisma';
+import { PrismaService } from '@/prisma/index';
 
 @Injectable()
 export class ProfessionalsService {

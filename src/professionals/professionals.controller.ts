@@ -1,7 +1,13 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch
+} from '@nestjs/common';
 
 import { ProfessionalsService } from './professionals.service';
-import { CreateProfessionalProfileDto } from './dto/create-professional-profile.dto';
 import { UpdateProfessionalProfileDto } from './dto/update-professional-profile.dto';
 
 @Controller('professionals')
