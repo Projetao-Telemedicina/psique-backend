@@ -1,4 +1,5 @@
 import {
+  IsDate,
   IsEmail,
   IsEnum,
   IsNotEmpty,
@@ -9,6 +10,7 @@ import {
 } from 'class-validator';
 import { Role } from '@prisma/client';
 import { CreatePatientProfileDto } from '@/patients/dto/create-patient-profile.dto';
+import { CreateProfessionalProfileDto } from '@/professionals/dto/create-professional-profile.dto';
 
 export class CreateUserDto {
   @IsString()
@@ -42,16 +44,21 @@ export class CreateUserDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(20)
-  crp?: string;
+  birthDate?: Date;
 
   @IsOptional()
   @IsString()
-  @MaxLength(80)
-  specialty?: string;
+  gender?: string;
+
+  @IsOptional()
+  @IsString()
+  avatarUrl?: string;
 
   @IsOptional()
   patientProfile?: CreatePatientProfileDto;
+
+  @IsOptional()
+  professionalProfile?: CreateProfessionalProfileDto;
 
   @IsOptional()
   @IsString()

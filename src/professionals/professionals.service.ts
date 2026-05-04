@@ -1,13 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '@/prisma/index';
-import { UpdatePatientProfileDto } from './dto/update-patient-profile.dto';
+import { CreateProfessionalProfileDto } from './dto/create-professional-profile.dto';
+import { UpdateProfessionalProfileDto } from './dto/update-professional-profile.dto';
+import { PrismaService } from '@/prisma';
 
 @Injectable()
-export class PatientsService {
+export class ProfessionalsService {
   constructor(private prisma: PrismaService) {}
 
-  async getPatientProfile(userId: string) {
-    const profile = await this.prisma.patientProfile.findUnique({
+  async getProfessionalProfile(userId: string) {
+    const profile = await this.prisma.professionalProfile.findUnique({
       where: { userId },
       include: {
         user: {
@@ -34,20 +35,20 @@ export class PatientsService {
       },
     });
 
-    if (!profile) throw new NotFoundException('Perfil do paciente não encontrado');
+    if (!profile) throw new NotFoundException('Perfil do profissional não encontrado');
     return profile;
   }
 
-  async updateProfile(userId: string, dto: UpdatePatientProfileDto) {
-    const exists = await this.prisma.patientProfile.findUnique({
+  async updateProfile(userId: string, dto: UpdateProfessionalProfileDto) {
+    const exists = await this.prisma.professionalProfile.findUnique({
       where: { userId },
     });
 
     if (!exists) {
-      throw new NotFoundException('Perfil do paciente não encontrado');
+      throw new NotFoundException('Perfil do profissional não encontrado');
     }
 
-    return this.prisma.patientProfile.update({
+    return this.prisma.professionalProfile.update({
       where: { userId },
       data: dto,
     });

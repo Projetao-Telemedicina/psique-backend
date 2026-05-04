@@ -8,10 +8,6 @@ import {
 
 export class CreatePatientProfileDto {
   @IsOptional()
-  @IsDateString()
-  birthDate?: string;
-
-  @IsOptional()
   @IsString()
   @MaxLength(120)
   emergencyContactName?: string;

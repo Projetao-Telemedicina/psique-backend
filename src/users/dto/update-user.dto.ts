@@ -5,6 +5,9 @@ export class UpdateUserDto extends PartialType(
   PickType(CreateUserDto, [
     'name',
     'phone',
+    'birthDate',
+    'gender',
+    'avatarUrl',
     'bio',
     'cep',
     'state',
@@ -14,5 +17,6 @@ export class UpdateUserDto extends PartialType(
     'number',
     'complement',
     'patientProfile',
+    'professionalProfile',
   ] as const),
 ) {}

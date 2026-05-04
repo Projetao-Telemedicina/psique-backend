@@ -8,30 +8,40 @@ import { ConflictException } from '@nestjs/common';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-   @Post()
-   async create(@Body() createUserDto: CreateUserDto) {
-     try {
-       return await this.usersService.create(createUserDto);
-     } catch (error) {
-       if (error instanceof ConflictException) {
-         throw new ConflictException('Email, CPF ou CRP já cadastrado');
-       }
-       throw error;
-     }
-   }
+  @Post()
+  async create(@Body() createUserDto: CreateUserDto) {
+    try {
+      return await this.usersService.create(createUserDto);
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        throw new ConflictException('Email, CPF ou CRP já cadastrado');
+      }
+      throw error;
+    }
+  }
 
-  @Get('patient/:id')
-  findPatient(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usersService.findPatient(id);
+  @Get()
+  async getAll() {
+    return this.usersService.getAll();
+  }
+
+  @Get(':id')
+  async getById(@Param('id', ParseUUIDPipe) id: string) {
+    return this.usersService.getById(id);
+  }
+
+  @Get('active')
+  async getActiveUsers() {
+    return this.usersService.getActiveUsers();
   }
 
   @Patch(':id')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateUserDto: UpdateUserDto) {
+  async update(@Param('id', ParseUUIDPipe) id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string) {
+  async remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.remove(id);
   }
 }

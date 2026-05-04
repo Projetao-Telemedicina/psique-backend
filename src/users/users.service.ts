@@ -1,13 +1,13 @@
+import { PrismaService } from '@/prisma/index';
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '@/prisma/index';
+import { Role, UserStatus } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { UserStatus } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -16,134 +16,202 @@ export class UsersService {
   async create(dto: CreateUserDto) {
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
-      if (dto.role === 'PATIENT') {
-        return await this.prisma.user.create({
-          data: {
-            name: dto.name,
-            email: dto.email,
-            passwordHash,
-            role: dto.role,
-            cpf: dto.cpf,
-            phone: dto.phone,
-            patientProfile: {
-              create: dto.patientProfile || {},
-            },
-          },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            patientProfile: true,
-          },
-        });
-      }
-
-      if (dto.role === 'PROFESSIONAL') {
-        if (!dto.crp) {
-          throw new BadRequestException('CRP é obrigatório');
-        }
-
-        return await this.prisma.user.create({
-          data: {
-            name: dto.name,
-            email: dto.email,
-            passwordHash,
-            role: dto.role,
-            professionalProfile: {
-              create: {
-                crp: dto.crp,
-                specialty: dto.specialty,
-              },
-            },
-          },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-            professionalProfile: true,
-          },
-        });
-      }
-
-      // ADMIN
+    if (dto.role === Role.PATIENT) {
       return await this.prisma.user.create({
         data: {
           name: dto.name,
           email: dto.email,
           passwordHash,
-          role: dto.role,
+          role: Role.PATIENT,
+          cpf: dto.cpf,
+          phone: dto.phone,
+          birthDate: dto.birthDate as any,
+          gender: dto.gender,
+          avatarUrl: dto.avatarUrl,
+          cep: dto.cep,
+          state: dto.state,
+          city: dto.city,
+          neighborhood: dto.neighborhood,
+          street: dto.street,
+          number: dto.number,
+          complement: dto.complement,
+          bio: dto.bio,
+          patientProfile: {
+            create: dto.patientProfile || {},
+          },
         },
         select: {
           id: true,
           name: true,
           email: true,
           role: true,
+          birthDate: true,
+          patientProfile: true,
         },
       });
     }
 
-  async findPatient(id: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
+    if (dto.role === Role.PROFESSIONAL) {
+      if (!dto.professionalProfile || !dto.professionalProfile.crp) {
+        throw new BadRequestException('CRP é obrigatório');
+      }
+
+      return await this.prisma.user.create({
+        data: {
+          name: dto.name,
+          email: dto.email,
+          passwordHash,
+          role: Role.PROFESSIONAL,
+          cpf: dto.cpf,
+          phone: dto.phone,
+          birthDate: dto.birthDate as any,
+          gender: dto.gender,
+          avatarUrl: dto.avatarUrl,
+          cep: dto.cep,
+          state: dto.state,
+          city: dto.city,
+          neighborhood: dto.neighborhood,
+          street: dto.street,
+          number: dto.number,
+          complement: dto.complement,
+          bio: dto.bio,
+          professionalProfile: {
+            create: {
+              crp: dto.professionalProfile.crp,
+              specialty: dto.professionalProfile.specialty,
+              approvalStatus: dto.professionalProfile.approvalStatus,
+              onlineStatus: dto.professionalProfile.onlineStatus,
+              availableForEmergency: dto.professionalProfile.availableForEmergency,
+              autoAbsenceMessage: dto.professionalProfile.autoAbsenceMessage,
+              gapBetweenAppointmentsMinutes: dto.professionalProfile.gapBetweenAppointmentsMinutes,
+            },
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          birthDate: true,
+          professionalProfile: true,
+        },
+      });
+    }
+
+    return await this.prisma.user.create({
+      data: {
+        name: dto.name,
+        email: dto.email,
+        passwordHash,
+        role: Role.ADMIN,
+        cpf: dto.cpf,
+        phone: dto.phone,
+        birthDate: dto.birthDate as any,
+        gender: dto.gender,
+        avatarUrl: dto.avatarUrl,
+        cep: dto.cep,
+        state: dto.state,
+        city: dto.city,
+        neighborhood: dto.neighborhood,
+        street: dto.street,
+        number: dto.number,
+        complement: dto.complement,
+        bio: dto.bio,
+      },
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
-        patientProfile: {
-  	  select: {
-            birthDate: true,
-            emergencyContactName: true,
-            emergencyContactPhone: true,
-            shareDiaryWithProfessionals: true,
-         }
-       },
-      },
-    });
-
-    if (!user || user.role !== 'PATIENT') {
-      throw new NotFoundException('Paciente não encontrado');
-    }
-
-    return user;
-  }
-
-  async update(id: string, dto: UpdateUserDto) {
-    const userExists = await this.prisma.user.findUnique({
-      where: { id },
-    });
-
-    if (!userExists) {
-      throw new NotFoundException('Usuário não encontrado');
-    }
-
-    return this.prisma.user.update({
-      where: { id },
-      data: {
-        name: dto.name,
-        phone: dto.phone,
-        bio: dto.bio,
-        city: dto.city,
-        state: dto.state,
-      },
+        birthDate: true,
+        },
     });
   }
 
-  async remove(id: string) {
+  async getAll() {
+    return this.prisma.user.findMany({
+      omit: {
+        passwordHash: true,
+      }
+    });
+  }
+
+  async getActiveUsers() {
+    return this.prisma.user.findMany({
+      where: {
+        status: UserStatus.ACTIVE,
+      },
+      omit: {
+        passwordHash: true,
+      }
+    });
+  }
+
+  async getById(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
+      omit: {
+        passwordHash: true,
+      }
     });
 
     if (!user) {
       throw new NotFoundException('Usuário não encontrado');
     }
 
+    return user;
+  }
+
+  async update(id: string, dto: UpdateUserDto) {
+    await this.getById(id);
+
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        name: dto.name,
+        phone: dto.phone,
+        birthDate: dto.birthDate as any,
+        gender: dto.gender,
+        avatarUrl: dto.avatarUrl,
+        bio: dto.bio,
+        cep: dto.cep,
+        state: dto.state,
+        city: dto.city,
+        neighborhood: dto.neighborhood,
+        street: dto.street,
+        number: dto.number,
+        complement: dto.complement,
+        ...(dto.patientProfile && {
+          patientProfile: {
+            upsert: {
+              create: dto.patientProfile,
+              update: dto.patientProfile,
+            },
+          },
+        }),
+        ...(dto.professionalProfile && {
+          professionalProfile: {
+            upsert: {
+              create: dto.professionalProfile,
+              update: dto.professionalProfile,
+            },
+          },
+        }),
+      },
+      omit: { passwordHash: true },
+    });
+  }
+
+  async remove(id: string) {
+    await this.getById(id);
+
     return this.prisma.user.update({
       where: { id },
       data: {
         status: UserStatus.INACTIVE,
+      },
+      omit: {
+        passwordHash: true,
       },
     });
   }
