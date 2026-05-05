@@ -14,6 +14,14 @@ import { CreatePatientProfileDto } from '@/patients/dto/create-patient-profile.d
 import { CreateProfessionalProfileDto } from '@/professionals/dto/create-professional-profile.dto';
 import { IsCPF } from '@/common/validators/index';
 
+function normalizeCpfValue({ value }: { value: unknown }): unknown {
+  if (typeof value === 'string') {
+    return value.replace(/\D/g, '');
+  }
+
+  return value;
+}
+
 export class CreateUserDto {
   @IsString()
   @IsNotEmpty()
@@ -35,9 +43,7 @@ export class CreateUserDto {
   role!: Role;
 
   @IsOptional()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.replace(/\D/g, '') : value,
-  )
+  @Transform(normalizeCpfValue)
   @IsCPF()
   cpf?: string;
 
