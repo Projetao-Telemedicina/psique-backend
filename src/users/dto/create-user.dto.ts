@@ -8,9 +8,11 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { Role } from '@prisma/client';
 import { CreatePatientProfileDto } from '@/patients/dto/create-patient-profile.dto';
 import { CreateProfessionalProfileDto } from '@/professionals/dto/create-professional-profile.dto';
+import { IsCPF } from '@/common/validators/index';
 
 export class CreateUserDto {
   @IsString()
@@ -33,8 +35,10 @@ export class CreateUserDto {
   role!: Role;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(14)
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.replace(/\D/g, '') : value,
+  )
+  @IsCPF()
   cpf?: string;
 
   @IsOptional()
