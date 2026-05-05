@@ -4,6 +4,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -17,15 +18,15 @@ export class CreateUserDto {
   @MaxLength(120)
   name!: string;
 
-  @IsEmail()
-  @IsNotEmpty()
-  @MaxLength(255)
+  @IsEmail({}, { message: 'email deve ser um endereço de email válido' })
+  @IsNotEmpty({ message: 'O e-mail é obrigatório' })
+  @MaxLength(255, { message: 'O e-mail deve ter no máximo 255 caracteres' })
   email!: string;
 
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(8)
-  @MaxLength(72)
+  @IsString({ message: 'A senha deve ser um texto com letras e números' })
+  @IsNotEmpty({ message: 'A senha é obrigatória' })
+  @MinLength(8, { message: 'A senha deve ter no mínimo 8 caracteres' })
+  @MaxLength(72, { message: 'A senha deve ter no máximo 72 caracteres' })
   password!: string;
 
   @IsEnum(Role)
@@ -42,8 +43,10 @@ export class CreateUserDto {
   phone?: string;
 
   @IsOptional()
-  @IsString()
-  birthDate?: Date;
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: 'A data de nascimento deve estar no formato YYYY-MM-DD',
+  })
+  birthDate?: string;
 
   @IsOptional()
   @IsString()

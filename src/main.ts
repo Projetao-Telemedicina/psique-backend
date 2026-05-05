@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -128,6 +128,13 @@ async function bootstrap() {
   loadEnvironment();
 
   const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   setupApiDocumentation(app);
 

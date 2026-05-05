@@ -14,6 +14,28 @@ import { UpdateUserDto } from './dto/update-user.dto';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
+  private parseBirthDate(birthDate?: string): Date | undefined {
+    if (!birthDate) {
+      return undefined;
+    }
+
+    const [year, month, day] = birthDate.split('-').map(Number);
+    const parsedDate = new Date(`${birthDate}T00:00:00.000Z`);
+
+    if (
+      Number.isNaN(parsedDate.getTime()) ||
+      parsedDate.getUTCFullYear() !== year ||
+      parsedDate.getUTCMonth() + 1 !== month ||
+      parsedDate.getUTCDate() !== day
+    ) {
+      throw new BadRequestException(
+        'A data de nascimento deve ser uma data válida no formato YYYY-MM-DD',
+      );
+    }
+
+    return parsedDate;
+  }
+
   private async validateCreateUserConflicts(dto: CreateUserDto): Promise<void> {
     const checks: Array<Promise<unknown>> = [
       this.prisma.user.findUnique({
@@ -51,6 +73,7 @@ export class UsersService {
     await this.validateCreateUserConflicts(dto);
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
+    const birthDate = this.parseBirthDate(dto.birthDate);
 
     if (dto.role === Role.PATIENT) {
       return await this.prisma.user.create({
@@ -61,7 +84,7 @@ export class UsersService {
           role: Role.PATIENT,
           cpf: dto.cpf,
           phone: dto.phone,
-          birthDate: dto.birthDate as Date,
+          birthDate,
           gender: dto.gender,
           avatarUrl: dto.avatarUrl,
           cep: dto.cep,
@@ -100,7 +123,7 @@ export class UsersService {
           role: Role.PROFESSIONAL,
           cpf: dto.cpf,
           phone: dto.phone,
-          birthDate: dto.birthDate as Date,
+          birthDate,
           gender: dto.gender,
           avatarUrl: dto.avatarUrl,
           cep: dto.cep,
@@ -142,7 +165,7 @@ export class UsersService {
         role: Role.ADMIN,
         cpf: dto.cpf,
         phone: dto.phone,
-        birthDate: dto.birthDate as Date,
+        birthDate,
         gender: dto.gender,
         avatarUrl: dto.avatarUrl,
         cep: dto.cep,
@@ -200,13 +223,14 @@ export class UsersService {
 
   async update(id: string, dto: UpdateUserDto) {
     await this.getById(id);
+    const birthDate = this.parseBirthDate(dto.birthDate);
 
     return this.prisma.user.update({
       where: { id },
       data: {
         name: dto.name,
         phone: dto.phone,
-        birthDate: dto.birthDate as Date,
+        birthDate,
         gender: dto.gender,
         avatarUrl: dto.avatarUrl,
         bio: dto.bio,
