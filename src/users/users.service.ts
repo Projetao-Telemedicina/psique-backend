@@ -1,6 +1,7 @@
 import { PrismaService } from '@/prisma/index';
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -13,7 +14,42 @@ import { UpdateUserDto } from './dto/update-user.dto';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
+  private async validateCreateUserConflicts(dto: CreateUserDto): Promise<void> {
+    const checks: Array<Promise<unknown>> = [
+      this.prisma.user.findUnique({
+        where: { email: dto.email },
+        select: { id: true },
+      }),
+    ];
+
+    if (dto.cpf) {
+      checks.push(
+        this.prisma.user.findUnique({
+          where: { cpf: dto.cpf },
+          select: { id: true },
+        }),
+      );
+    }
+
+    if (dto.professionalProfile?.crp) {
+      checks.push(
+        this.prisma.professionalProfile.findUnique({
+          where: { crp: dto.professionalProfile.crp },
+          select: { userId: true },
+        }),
+      );
+    }
+
+    const conflicts = await Promise.all(checks);
+
+    if (conflicts.some(Boolean)) {
+      throw new ConflictException('Usuário já cadastrado');
+    }
+  }
+
   async create(dto: CreateUserDto) {
+    await this.validateCreateUserConflicts(dto);
+
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
     if (dto.role === Role.PATIENT) {
