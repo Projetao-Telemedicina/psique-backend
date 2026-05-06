@@ -7,12 +7,17 @@ const composeFiles = {
   test: 'docker-compose.test.yml',
 };
 
+const projectNames = {
+  dev: 'psique-backend-dev',
+  test: 'psique-backend-test',
+};
+
 if (!action || !target || !(target in composeFiles)) {
   console.error('Uso: node ./scripts/docker-compose.mjs <up|down> <dev|test>');
   process.exit(1);
 }
 
-const args = ['compose', '-f', composeFiles[target]];
+const args = ['compose', '-p', projectNames[target], '-f', composeFiles[target]];
 
 if (action === 'up') {
   args.push('up', '-d', '--wait');

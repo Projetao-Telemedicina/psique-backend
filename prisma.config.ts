@@ -17,6 +17,7 @@ if (envFile) {
   loadDotenv({
     path: resolve(process.cwd(), envFile),
     override: false,
+    quiet: true,
   });
 }
 
