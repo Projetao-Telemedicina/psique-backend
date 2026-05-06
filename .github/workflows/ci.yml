@@ -97,14 +97,14 @@ jobs:
       - name: Load CI environment
         shell: bash
         run: |
-          printf '%s\n' '${{ secrets.CI_ENV_FILE }}' > .ci.env
-          grep -v '^[[:space:]]*$' .ci.env | grep -v '^[[:space:]]*#' >> "$GITHUB_ENV"
+          printf '%s\n' '${{ secrets.CI_ENV_FILE }}' > .env.test
+          grep -v '^[[:space:]]*$' .env.test | grep -v '^[[:space:]]*#' >> "$GITHUB_ENV"
 
       - name: Generate Prisma client
         run: npm run prisma:generate
 
       - name: Apply Prisma migrations
-        run: npx prisma migrate deploy
+        run: npm run prisma:migrate:test
 
       - name: Run e2e tests
-        run: npm run test:e2e
+        run: npm run test:e2e:ci

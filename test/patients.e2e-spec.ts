@@ -1,6 +1,5 @@
 import request from 'supertest';
 import { Role } from '@prisma/client';
-import { App } from 'supertest/types';
 import { E2eAppContext, createE2eApp, resetDatabase } from './e2e-helpers.js';
 
 describe('PatientsController (e2e)', () => {
@@ -22,7 +21,7 @@ describe('PatientsController (e2e)', () => {
   });
 
   async function createPatientUser() {
-    const response = await request(context.app.getHttpServer() as App)
+    const response = await request(context.app.getHttpServer())
       .post('/users')
       .send({
         name: 'Marina Costa',
@@ -43,7 +42,7 @@ describe('PatientsController (e2e)', () => {
   it('GET /patient/:userId/profile returns the patient profile with user data', async () => {
     const patient = await createPatientUser();
 
-    const response = await request(context.app.getHttpServer() as App)
+    const response = await request(context.app.getHttpServer())
       .get(`/patient/${patient.id}/profile`)
       .expect(200);
 
@@ -63,7 +62,7 @@ describe('PatientsController (e2e)', () => {
   it('PATCH /patient/:userId/profile updates the patient profile', async () => {
     const patient = await createPatientUser();
 
-    const response = await request(context.app.getHttpServer() as App)
+    const response = await request(context.app.getHttpServer())
       .patch(`/patient/${patient.id}/profile`)
       .send({
         emergencyContactName: 'Larissa Costa',
@@ -81,7 +80,7 @@ describe('PatientsController (e2e)', () => {
   });
 
   it('PATCH /patient/:userId/profile returns 404 for a missing profile', async () => {
-    await request(context.app.getHttpServer() as App)
+    await request(context.app.getHttpServer())
       .patch('/patient/0f0d6a8f-25fc-457e-a8fa-c3a43e3c8da1/profile')
       .send({
         emergencyContactName: 'Novo Contato',

@@ -1,11 +1,10 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { App } from 'supertest/types';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { AppModule } from './../src/app.module.js';
 
 export type E2eAppContext = {
-  app: INestApplication<App>;
+  app: INestApplication;
   prisma: PrismaService;
 };
 
@@ -14,7 +13,7 @@ export async function createE2eApp(): Promise<E2eAppContext> {
     imports: [AppModule],
   }).compile();
 
-  const app = moduleFixture.createNestApplication<App>();
+  const app: INestApplication = moduleFixture.createNestApplication();
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -27,7 +26,7 @@ export async function createE2eApp(): Promise<E2eAppContext> {
 
   return {
     app,
-    prisma: app.get(PrismaService),
+    prisma: app.get<PrismaService>(PrismaService),
   };
 }
 

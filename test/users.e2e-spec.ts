@@ -1,6 +1,5 @@
 import request from 'supertest';
 import { Role, UserStatus } from '@prisma/client';
-import { App } from 'supertest/types';
 import { E2eAppContext, createE2eApp, resetDatabase } from './e2e-helpers.js';
 
 describe('UsersController (e2e)', () => {
@@ -37,7 +36,7 @@ describe('UsersController (e2e)', () => {
       },
     };
 
-    const response = await request(context.app.getHttpServer() as App)
+    const response = await request(context.app.getHttpServer())
       .post('/users')
       .send(payload)
       .expect(201);
@@ -83,7 +82,7 @@ describe('UsersController (e2e)', () => {
       },
     });
 
-    const response = await request(context.app.getHttpServer() as App)
+    const response = await request(context.app.getHttpServer())
       .get('/users/active')
       .expect(200);
 
@@ -96,13 +95,13 @@ describe('UsersController (e2e)', () => {
   });
 
   it('GET /users/:id returns 404 when the user does not exist', async () => {
-    await request(context.app.getHttpServer() as App)
+    await request(context.app.getHttpServer())
       .get('/users/0f0d6a8f-25fc-457e-a8fa-c3a43e3c8da1')
       .expect(404);
   });
 
   it('PATCH /users/:id updates user fields and patient profile', async () => {
-    const createResponse = await request(context.app.getHttpServer() as App)
+    const createResponse = await request(context.app.getHttpServer())
       .post('/users')
       .send({
         name: 'Carlos Lima',
@@ -115,7 +114,7 @@ describe('UsersController (e2e)', () => {
       })
       .expect(201);
 
-    const response = await request(context.app.getHttpServer() as App)
+    const response = await request(context.app.getHttpServer())
       .patch(`/users/${createResponse.body.id}`)
       .send({
         name: 'Carlos Lima Atualizado',
@@ -158,7 +157,7 @@ describe('UsersController (e2e)', () => {
       },
     });
 
-    const response = await request(context.app.getHttpServer() as App)
+    const response = await request(context.app.getHttpServer())
       .delete(`/users/${user.id}`)
       .expect(200);
 
