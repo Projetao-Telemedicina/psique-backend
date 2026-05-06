@@ -61,7 +61,8 @@ describe('UsersController (e2e)', () => {
     expect(createdUser?.patientProfile).toMatchObject(payload.patientProfile);
   });
 
-  it('GET /users/active returns only active users', async () => {
+  it('GET /users?status=ACTIVE returns only active users', async () => {
+    // 1 Ativo
     await context.prisma.user.create({
       data: {
         name: 'Active User',
@@ -72,6 +73,7 @@ describe('UsersController (e2e)', () => {
       },
     });
 
+    // 1 Inativo (Ruído para ser filtrado)
     await context.prisma.user.create({
       data: {
         name: 'Inactive User',
@@ -83,13 +85,83 @@ describe('UsersController (e2e)', () => {
     });
 
     const response = await request(context.app.getHttpServer())
-      .get('/users/active')
+      .get('/users?status=ACTIVE')
       .expect(200);
 
-    expect(response.body).toHaveLength(1);
+    expect(response.body).toHaveLength(1); // Garante que o Inativo foi ignorado
     expect(response.body[0]).toMatchObject({
       name: 'Active User',
       status: UserStatus.ACTIVE,
+    });
+    expect(response.body[0]).not.toHaveProperty('passwordHash');
+  });
+
+  it('GET /users?status=INACTIVE returns only inactive users', async () => {
+    // 1 Inativo
+    await context.prisma.user.create({
+      data: {
+        name: 'Inactive User',
+        email: nextEmail('inactive'),
+        passwordHash: 'hash',
+        role: Role.ADMIN,
+        status: UserStatus.INACTIVE,
+      },
+    });
+
+    // 1 Ativo (Ruído para ser filtrado)
+    await context.prisma.user.create({
+      data: {
+        name: 'Active User',
+        email: nextEmail('active'),
+        passwordHash: 'hash',
+        role: Role.ADMIN,
+        status: UserStatus.ACTIVE,
+      },
+    });
+
+    const response = await request(context.app.getHttpServer())
+      .get('/users?status=INACTIVE')
+      .expect(200);
+
+    expect(response.body).toHaveLength(1); // Garante que o Ativo foi ignorado
+    expect(response.body[0]).toMatchObject({
+      name: 'Inactive User',
+      status: UserStatus.INACTIVE,
+    });
+    expect(response.body[0]).not.toHaveProperty('passwordHash');
+  });
+
+  it('GET /users?status=BLOCKED returns only blocked users', async () => {
+    // 1 Bloqueado
+    await context.prisma.user.create({
+      data: {
+        name: 'Blocked User',
+        email: nextEmail('blocked'),
+        passwordHash: 'hash',
+        role: Role.ADMIN,
+        status: UserStatus.BLOCKED,
+      },
+    });
+
+    // 1 Ativo (Ruído para ser filtrado)
+    await context.prisma.user.create({
+      data: {
+        name: 'Active User',
+        email: nextEmail('active'),
+        passwordHash: 'hash',
+        role: Role.ADMIN,
+        status: UserStatus.ACTIVE,
+      },
+    });
+
+    const response = await request(context.app.getHttpServer())
+      .get('/users?status=BLOCKED')
+      .expect(200);
+
+    expect(response.body).toHaveLength(1); // Garante que o Ativo foi ignorado
+    expect(response.body[0]).toMatchObject({
+      name: 'Blocked User',
+      status: UserStatus.BLOCKED,
     });
     expect(response.body[0]).not.toHaveProperty('passwordHash');
   });
