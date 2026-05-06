@@ -24,6 +24,7 @@ if (envFile) {
   loadDotenv({
     path: resolvedEnvFile,
     override: true,
+    quiet: true,
   });
 }
 

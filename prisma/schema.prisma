@@ -158,10 +158,13 @@ model User {
   cpf          String?    @unique
   email        String     @unique
   passwordHash String     @map("password_hash")
+  birthDate    DateTime?  @db.Date @map("birth_date")
+  gender       String?    @map("gender")
   role         Role
   status       UserStatus @default(INACTIVE)
   phone        String?
   bio          String?
+  avatarUrl    String?    @map("avatar_url")
 
   cep          String?
   state        String?
@@ -191,7 +194,6 @@ model User {
 
 model PatientProfile {
   userId                      String   @id @map("user_id")
-  birthDate                   DateTime? @db.Date @map("birth_date")
   emergencyContactName        String?  @map("emergency_contact_name")
   emergencyContactPhone       String?  @map("emergency_contact_phone")
   shareDiaryWithProfessionals Boolean  @default(false) @map("share_diary_with_professionals")
