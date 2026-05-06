@@ -187,18 +187,10 @@ export class UsersService {
     });
   }
 
-  async getAll() {
-    return this.prisma.user.findMany({
-      omit: {
-        passwordHash: true,
-      }
-    });
-  }
-
-  async getActiveUsers() {
+  async getAll(status?: UserStatus) {
     return this.prisma.user.findMany({
       where: {
-        status: UserStatus.ACTIVE,
+        ...(status && { status }),
       },
       omit: {
         passwordHash: true,

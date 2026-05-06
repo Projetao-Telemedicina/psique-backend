@@ -7,19 +7,20 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import {
   CreateUserApiDocs,
-  GetActiveUsersApiDocs,
   GetAllUsersApiDocs,
   GetUserByIdApiDocs,
   RemoveUserApiDocs,
   UpdateUserApiDocs,
   UsersControllerApiTags,
 } from './swagger/index.js';
+import { UserStatus } from '@prisma/client';
 
 @UsersControllerApiTags()
 @Controller('users')
@@ -34,14 +35,9 @@ export class UsersController {
 
   @Get()
   @GetAllUsersApiDocs()
-  async getAll() {
-    return this.usersService.getAll();
-  }
-
-  @Get('active')
-  @GetActiveUsersApiDocs()
-  async getActiveUsers() {
-    return this.usersService.getActiveUsers();
+  async getAll(@Query('status') status?: UserStatus) {
+    // Passamos a string (ou undefined) direto para o service
+    return this.usersService.getAll(status);
   }
 
   @Get(':id')

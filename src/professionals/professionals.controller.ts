@@ -14,6 +14,8 @@ import {
   ProfessionalsControllerApiTags,
   UpdateProfessionalProfileApiDocs,
 } from './swagger/index.js';
+import { UpdateProfessionalOnlineModeApiDocs } from './swagger/professionals.update-online-mode.swagger';
+import { UpdateOnlineStatusDto } from './dto/update-online-status.dto';
 
 @ProfessionalsControllerApiTags()
 @Controller('professionals')
@@ -33,5 +35,14 @@ export class ProfessionalsController {
     @Body() updateProfessionalDto: UpdateProfessionalProfileDto,
   ) {
     return this.professionalsService.updateProfile(userId, updateProfessionalDto);
+  }
+
+  @Patch(':userId/online-mode')
+  @UpdateProfessionalOnlineModeApiDocs()
+  updateOnlineMode(
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Body() updateDto: UpdateOnlineStatusDto,
+  ) {
+    return this.professionalsService.updateOnlineMode(userId, updateDto.onlineMode);
   }
 }

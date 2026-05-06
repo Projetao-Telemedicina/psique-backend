@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UpdateProfessionalProfileDto } from './dto/update-professional-profile.dto';
 import { PrismaService } from '@/prisma/index';
+import { OnlineStatus } from '@prisma/client';
 
 @Injectable()
 export class ProfessionalsService {
@@ -50,6 +51,23 @@ export class ProfessionalsService {
     return this.prisma.professionalProfile.update({
       where: { userId },
       data: dto,
+    });
+  }
+
+  async updateOnlineMode(userId: string, onlineMode: OnlineStatus) {
+    const exists = await this.prisma.professionalProfile.findUnique({
+      where: { userId },
+    });
+
+    if (!exists) {
+      throw new NotFoundException('Perfil do profissional não encontrado');
+    }
+
+    return this.prisma.professionalProfile.update({
+      where: { userId },
+      data: {
+        onlineStatus: onlineMode,
+      },
     });
   }
 }

@@ -1,7 +1,8 @@
 import { applyDecorators } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { ApiCommonErrorResponses } from '../../common/swagger/index.js';
 import { userListResponseSchema } from './users.schemas.js';
+import { UserStatus } from '@prisma/client';
 
 export function GetAllUsersApiDocs(): MethodDecorator {
   return applyDecorators(
@@ -19,6 +20,12 @@ export function GetAllUsersApiDocs(): MethodDecorator {
       includeUnauthorized: false,
       includeForbidden: false,
       includeNotFound: false,
+    }),
+    ApiQuery({
+      name: 'status',
+      enum: UserStatus,
+      required: false, // Indica que não é obrigatório
+      description: 'Filtra os usuários por status (ex: ACTIVE, INACTIVE)',
     }),
   );
 }
