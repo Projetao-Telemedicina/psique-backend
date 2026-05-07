@@ -35,20 +35,27 @@ enum ProfessionalRequestStatus {
   REJECTED
 }
 
-// enum AppointmentStatus {
-//   SCHEDULED
-//   RESCHEDULE_REQUESTED
-//   CANCELED
-//   COMPLETED
-//   NO_SHOW
-// }
+enum AppointmentStatus {
+  SCHEDULED
+  RESCHEDULE_REQUESTED
+  CANCELED
+  COMPLETED
+  NO_SHOW
+}
 
-// enum AppointmentCanceledBy {
-//   PATIENT
-//   PROFESSIONAL
-//   ADMIN
-//   SYSTEM
-// }
+enum AppointmentCanceledBy {
+  PATIENT
+  PROFESSIONAL
+  ADMIN
+  SYSTEM
+}
+
+enum RescheduleRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
 
 // enum CalendarEventType {
 //   PERSONAL_COMMITMENT
@@ -181,7 +188,7 @@ model User {
   professionalProfile ProfessionalProfile?
 
   reviewedProfessionalRequests ProfessionalRequest[] @relation("ReviewedProfessionalRequests")
-  // requestedReschedules          AppointmentRescheduleRequest[]
+  requestedReschedules          AppointmentRescheduleRequest[]
   // sentMessages                  Message[]
   // paymentMethods                PaymentMethod[]
   // subscriptions                 Subscription[]
@@ -202,7 +209,7 @@ model PatientProfile {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // appointments   Appointment[]
+  appointments   Appointment[]
   // reviews        Review[]
   // chatRooms      ChatRoom[]
   // wallet         Wallet?
@@ -232,7 +239,7 @@ model ProfessionalProfile {
   // availabilities  ProfessionalAvailability[]
   // breaks          ProfessionalBreak[]
   // calendarEvents  ProfessionalCalendarEvent[]
-  // appointments    Appointment[]
+  appointments    Appointment[]
   // reviews         Review[]
   // chatRooms       ChatRoom[]
   // promotions      ProfessionalPromotion[]
@@ -316,56 +323,56 @@ model ProfessionalRequestDocument {
 //   @@map("professional_calendar_events")
 // }
 
-// model Appointment {
-//   id                            String                 @id @default(uuid()) @map("appointment_id")
-//   patientId                     String                 @map("patient_id")
-//   professionalId                String                 @map("professional_id")
-//   status                        AppointmentStatus      @default(SCHEDULED)
-//   startsAt                      DateTime               @map("starts_at")
-//   endsAt                        DateTime               @map("ends_at")
-//   priceCents                    Int                    @map("price_cents")
-//   confirmedAt                   DateTime?              @map("confirmed_at")
-//   canceledBy                    AppointmentCanceledBy? @map("canceled_by")
-//   cancellationReason            String?                @map("cancellation_reason")
-//   canceledAt                    DateTime?              @map("canceled_at")
-//   completedAt                   DateTime?              @map("completed_at")
-//   rescheduledFromAppointmentId  String?                @map("rescheduled_from_appointment_id")
-//   attendanceCertificateUrl      String?                @map("attendance_certificate_url")
-//   createdAt                     DateTime               @default(now()) @map("created_at")
-//   updatedAt                     DateTime               @updatedAt @map("updated_at")
+model Appointment {
+  id                            String                 @id @default(uuid()) @map("appointment_id")
+  patientId                     String                 @map("patient_id")
+  professionalId                String                 @map("professional_id")
+  status                        AppointmentStatus      @default(SCHEDULED)
+  startsAt                      DateTime               @map("starts_at")
+  endsAt                        DateTime               @map("ends_at")
+  priceCents                    Int                    @map("price_cents")
+  confirmedAt                   DateTime?              @map("confirmed_at")
+  canceledBy                    AppointmentCanceledBy? @map("canceled_by")
+  cancellationReason            String?                @map("cancellation_reason")
+  canceledAt                    DateTime?              @map("canceled_at")
+  completedAt                   DateTime?              @map("completed_at")
+  rescheduledFromAppointmentId  String?                @map("rescheduled_from_appointment_id")
+  attendanceCertificateUrl      String?                @map("attendance_certificate_url")
+  createdAt                     DateTime               @default(now()) @map("created_at")
+  updatedAt                     DateTime               @updatedAt @map("updated_at")
 
-//   patient      PatientProfile       @relation(fields: [patientId], references: [userId])
-//   professional ProfessionalProfile  @relation(fields: [professionalId], references: [userId])
+  patient      PatientProfile       @relation(fields: [patientId], references: [userId])
+  professional ProfessionalProfile  @relation(fields: [professionalId], references: [userId])
 
-//   rescheduledFrom Appointment?  @relation("AppointmentRescheduleChain", fields: [rescheduledFromAppointmentId], references: [id])
-//   rescheduledTo   Appointment[] @relation("AppointmentRescheduleChain")
+  rescheduledFrom Appointment?  @relation("AppointmentRescheduleChain", fields: [rescheduledFromAppointmentId], references: [id])
+  rescheduledTo   Appointment[] @relation("AppointmentRescheduleChain")
 
-//   rescheduleRequests AppointmentRescheduleRequest[]
-//   review             Review?
-//   chatRooms          ChatRoom[]
-//   walletTransactions WalletTransaction[]
-//   payments           Payment[]
-//   videoCallSessions  VideoCallSession[]
+  rescheduleRequests AppointmentRescheduleRequest[]
+  // review             Review?
+  // chatRooms          ChatRoom[]
+  // walletTransactions WalletTransaction[]
+  // payments           Payment[]
+  // videoCallSessions  VideoCallSession[]
 
-//   @@map("appointments")
-// }
+  @@map("appointments")
+}
 
-// model AppointmentRescheduleRequest {
-//   id                    String   @id @default(uuid()) @map("request_id")
-//   appointmentId         String   @map("appointment_id")
-//   requestedBy           String   @map("requested_by")
-//   suggestedStartsAt     DateTime @map("suggested_starts_at")
-//   suggestedEndsAt       DateTime @map("suggested_ends_at")
-//   patientConfirmed      Boolean? @map("patient_confirmed")
-//   professionalConfirmed Boolean? @map("professional_confirmed")
-//   expiresAt             DateTime? @map("expires_at")
-//   createdAt             DateTime @default(now()) @map("created_at")
+model AppointmentRescheduleRequest {
+  id                    String   @id @default(uuid()) @map("request_id")
+  appointmentId         String   @map("appointment_id")
+  requestedBy           String   @map("requested_by")
+  suggestedStartsAt     DateTime @map("suggested_starts_at")
+  suggestedEndsAt       DateTime @map("suggested_ends_at")
+  patientConfirmed      Boolean? @map("patient_confirmed")
+  professionalConfirmed Boolean? @map("professional_confirmed")
+  expiresAt             DateTime? @map("expires_at")
+  createdAt             DateTime @default(now()) @map("created_at")
 
-//   appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
-//   requester   User        @relation(fields: [requestedBy], references: [id])
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  requester   User        @relation(fields: [requestedBy], references: [id])
 
-//   @@map("appointment_reschedule_requests")
-// }
+  @@map("appointment_reschedule_requests")
+}
 
 // model Review {
 //   id             String   @id @default(uuid()) @map("review_id")
