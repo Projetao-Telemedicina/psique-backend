@@ -1,9 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service.js';
+import { AppService } from './app.service';
 import {
   AppControllerApiTags,
   GetHelloApiResponsesOperation,
-} from './app/swagger/index.js';
+} from './app/swagger/index';
 
 @AppControllerApiTags()
 @Controller()
@@ -16,3 +16,4 @@ export class AppController {
     return this.appService.getHello();
   }
 }
+
