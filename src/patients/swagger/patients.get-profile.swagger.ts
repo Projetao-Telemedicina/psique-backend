@@ -3,8 +3,8 @@ import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import {
   ApiCommonErrorResponses,
   ApiUuidParam,
-} from '../../common/swagger/index.js';
-import { patientProfileWithUserResponseSchema } from './patients.schemas.js';
+} from '../../common/swagger/index';
+import { patientProfileWithUserResponseSchema } from './patients.schemas';
 
 export function GetPatientProfileApiDocs(): MethodDecorator {
   return applyDecorators(
@@ -24,3 +24,4 @@ export function GetPatientProfileApiDocs(): MethodDecorator {
     }),
   );
 }
+
