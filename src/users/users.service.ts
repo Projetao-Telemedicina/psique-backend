@@ -14,6 +14,22 @@ import { UpdateUserDto } from './dto/update-user.dto';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
+  async findByEmail(email: string) {
+    return this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        passwordHash: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
   private parseBirthDate(birthDate?: string): Date | undefined {
     if (!birthDate) {
       return undefined;

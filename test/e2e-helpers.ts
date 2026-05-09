@@ -1,9 +1,7 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Role } from '@prisma/client';
-import type { NextFunction, Request, Response } from 'express';
-import { PrismaService } from '../src/prisma/prisma.service.js';
-import { AppModule } from './../src/app.module.js';
+import { PrismaService } from '../src/prisma/prisma.service';
+import { AppModule } from './../src/app.module';
 
 export type E2eAppContext = {
   app: INestApplication;
@@ -51,3 +49,4 @@ export async function resetDatabase(prisma: PrismaService): Promise<void> {
   await prisma.patientProfile.deleteMany();
   await prisma.user.deleteMany();
 }
+

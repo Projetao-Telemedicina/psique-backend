@@ -1,1 +1,2 @@
-export * from './is-cpf.decorator.js';
+export * from './is-cpf.decorator';
+

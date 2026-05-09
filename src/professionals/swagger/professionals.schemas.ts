@@ -7,7 +7,7 @@ import {
   roleEnumValues,
   userStatusEnumValues,
   uuidSchema,
-} from '../../common/swagger/index.js';
+} from '../../common/swagger/index';
 
 export const professionalProfileCreateRequestProperties = {
   crp: {
@@ -67,6 +67,14 @@ export const professionalProfileUpdateRequestProperties = {
 export const professionalProfileUpdateRequestSchema = {
   type: 'object',
   properties: professionalProfileUpdateRequestProperties,
+};
+
+export const professionalOnlineModeUpdateRequestSchema = {
+  type: 'object',
+  properties: {
+    onlineMode: professionalProfileCreateRequestProperties.onlineStatus,
+  },
+  required: ['onlineMode'],
 };
 
 export const professionalProfileResponseProperties = {
@@ -183,3 +191,4 @@ export const professionalProfileWithUserResponseSchema = {
     'user',
   ],
 };
+

@@ -1,7 +1,7 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiQuery } from '@nestjs/swagger';
-import { ApiCommonErrorResponses } from '../../common/swagger/index.js';
-import { userListResponseSchema } from './users.schemas.js';
+import { ApiCommonErrorResponses } from '../../common/swagger/index';
+import { userListResponseSchema } from './users.schemas';
 import { UserStatus } from '@prisma/client';
 
 export function GetAllUsersApiDocs(): MethodDecorator {
@@ -29,3 +29,4 @@ export function GetAllUsersApiDocs(): MethodDecorator {
     }),
   );
 }
+

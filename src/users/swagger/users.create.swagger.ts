@@ -4,11 +4,11 @@ import {
   ApiCreatedResponse,
   ApiOperation,
 } from '@nestjs/swagger';
-import { ApiCommonErrorResponses } from '../../common/swagger/index.js';
+import { ApiCommonErrorResponses } from '../../common/swagger/index';
 import {
   createUserRequestSchema,
   createUserResponseSchema,
-} from './users.schemas.js';
+} from './users.schemas';
 
 export function CreateUserApiDocs(): MethodDecorator {
   return applyDecorators(
@@ -33,3 +33,4 @@ export function CreateUserApiDocs(): MethodDecorator {
     }),
   );
 }
+

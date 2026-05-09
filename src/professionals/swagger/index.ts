@@ -1,7 +1,8 @@
-export * from './professionals.get-profile.swagger.js';
+export * from './professionals.get-profile.swagger';
 
-export * from './professionals.schemas.js';
+export * from './professionals.schemas';
 
-export * from './professionals.tags.swagger.js';
+export * from './professionals.tags.swagger';
 
-export * from './professionals.update-profile.swagger.js';
+export * from './professionals.update-profile.swagger';
+

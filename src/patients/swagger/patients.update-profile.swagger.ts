@@ -1,5 +1,6 @@
 import { applyDecorators } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiOkResponse,
   ApiOperation,
@@ -7,20 +8,32 @@ import {
 import {
   ApiCommonErrorResponses,
   ApiUuidParam,
-} from '../../common/swagger/index.js';
+} from '../../common/swagger/index';
 import {
   patientProfileRequestSchema,
   patientProfileResponseSchema,
-} from './patients.schemas.js';
+} from './patients.schemas';
 
-export function UpdatePatientProfileApiDocs(): MethodDecorator {
+type UpdatePatientProfileApiDocsOptions = {
+  admin?: boolean;
+};
+
+export function UpdatePatientProfileApiDocs(
+  options: UpdatePatientProfileApiDocsOptions = {},
+): MethodDecorator {
+  const isAdmin = options.admin ?? false;
+
   return applyDecorators(
+    ApiBearerAuth('access-token'),
     ApiOperation({
-      summary: 'Atualiza o perfil do paciente',
-      description:
-        'Atualiza os dados específicos do perfil do paciente vinculado ao usuário informado.',
+      summary: isAdmin
+        ? 'Atualiza o perfil de um paciente como administrador'
+        : 'Atualiza o próprio perfil do paciente',
+      description: isAdmin
+        ? 'Atualiza os dados específicos do perfil de qualquer paciente. Esta operação exige autenticação e perfil de administrador.'
+        : 'Atualiza os dados específicos do perfil do paciente autenticado.',
     }),
-    ApiUuidParam('userId', 'ID do usuário paciente.'),
+    ...(isAdmin ? [ApiUuidParam('userId', 'ID do usuário paciente.')] : []),
     ApiBody({
       required: true,
       schema: patientProfileRequestSchema,
@@ -30,8 +43,8 @@ export function UpdatePatientProfileApiDocs(): MethodDecorator {
       schema: patientProfileResponseSchema,
     }),
     ApiCommonErrorResponses({
-      includeUnauthorized: false,
-      includeForbidden: false,
+      includeUnauthorized: true,
+      includeForbidden: true,
     }),
   );
 }

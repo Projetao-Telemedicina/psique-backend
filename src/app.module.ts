@@ -7,10 +7,12 @@ import { PrismaModule } from './prisma/index';
 import { ProfessionalsModule } from './professionals/professionals.module';
 import { UsersModule } from './users/users.module';
 import { RescheduleModule } from './reschedule/reschedule.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     PrismaModule,
+    AuthModule,
     UsersModule,
     PatientsModule,
     ProfessionalsModule,
