@@ -1,13 +1,14 @@
-export * from './users.create.swagger.js';
+export * from './users.create.swagger';
 
-export * from './users.get-all.swagger.js';
+export * from './users.get-all.swagger';
 
-export * from './users.get-by-id.swagger.js';
+export * from './users.get-by-id.swagger';
 
-export * from './users.remove.swagger.js';
+export * from './users.remove.swagger';
 
-export * from './users.schemas.js';
+export * from './users.schemas';
 
-export * from './users.tags.swagger.js';
+export * from './users.tags.swagger';
 
-export * from './users.update.swagger.js';
+export * from './users.update.swagger';
+
