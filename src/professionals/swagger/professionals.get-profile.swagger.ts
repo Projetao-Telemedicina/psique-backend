@@ -3,8 +3,8 @@ import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import {
   ApiCommonErrorResponses,
   ApiUuidParam,
-} from '../../common/swagger/index.js';
-import { professionalProfileWithUserResponseSchema } from './professionals.schemas.js';
+} from '../../common/swagger/index';
+import { professionalProfileWithUserResponseSchema } from './professionals.schemas';
 
 export function GetProfessionalProfileApiDocs(): MethodDecorator {
   return applyDecorators(
@@ -24,3 +24,4 @@ export function GetProfessionalProfileApiDocs(): MethodDecorator {
     }),
   );
 }
+
