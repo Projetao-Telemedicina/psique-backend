@@ -179,6 +179,7 @@ model User {
 
   patientProfile      PatientProfile?
   professionalProfile ProfessionalProfile?
+  tokens              Token[]
 
   reviewedProfessionalRequests ProfessionalRequest[] @relation("ReviewedProfessionalRequests")
   // requestedReschedules          AppointmentRescheduleRequest[]
@@ -190,6 +191,19 @@ model User {
   // notifications                 Notification[]
 
   @@map("users")
+}
+
+model Token {
+  id         String   @id @default(uuid()) @map("token_id")
+  userId     String   @unique @map("user_id")
+  jwt        String
+  refreshJwt String   @map("refresh_jwt")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("tokens")
 }
 
 model PatientProfile {

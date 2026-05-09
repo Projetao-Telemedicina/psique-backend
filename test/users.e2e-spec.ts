@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { Role, UserStatus } from '@prisma/client';
-import { E2eAppContext, createE2eApp, resetDatabase } from './e2e-helpers.js';
+import { E2eAppContext, createE2eApp, resetDatabase } from './e2e-helpers';
 
 describe('UsersController (e2e)', () => {
   let context: E2eAppContext;
@@ -245,3 +245,4 @@ describe('UsersController (e2e)', () => {
     expect(persisted?.status).toBe(UserStatus.INACTIVE);
   });
 });
+

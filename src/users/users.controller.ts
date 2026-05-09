@@ -19,7 +19,7 @@ import {
   RemoveUserApiDocs,
   UpdateUserApiDocs,
   UsersControllerApiTags,
-} from './swagger/index.js';
+} from './swagger/index';
 import { UserStatus } from '@prisma/client';
 
 @UsersControllerApiTags()
@@ -61,3 +61,4 @@ export class UsersController {
     return this.usersService.remove(id);
   }
 }
+

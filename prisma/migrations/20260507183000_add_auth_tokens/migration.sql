@@ -1,0 +1,17 @@
+-- CreateTable
+CREATE TABLE "tokens" (
+    "token_id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "jwt" TEXT NOT NULL,
+    "refresh_jwt" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "tokens_pkey" PRIMARY KEY ("token_id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "tokens_user_id_key" ON "tokens"("user_id");
+
+-- AddForeignKey
+ALTER TABLE "tokens" ADD CONSTRAINT "tokens_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;

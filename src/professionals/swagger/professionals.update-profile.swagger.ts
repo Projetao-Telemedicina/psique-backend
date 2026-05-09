@@ -1,5 +1,6 @@
 import { applyDecorators } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiOkResponse,
   ApiOperation,
@@ -7,20 +8,34 @@ import {
 import {
   ApiCommonErrorResponses,
   ApiUuidParam,
-} from '../../common/swagger/index.js';
+} from '../../common/swagger/index';
 import {
   professionalProfileResponseSchema,
   professionalProfileUpdateRequestSchema,
-} from './professionals.schemas.js';
+} from './professionals.schemas';
 
-export function UpdateProfessionalProfileApiDocs(): MethodDecorator {
+type UpdateProfessionalProfileApiDocsOptions = {
+  admin?: boolean;
+};
+
+export function UpdateProfessionalProfileApiDocs(
+  options: UpdateProfessionalProfileApiDocsOptions = {},
+): MethodDecorator {
+  const isAdmin = options.admin ?? false;
+
   return applyDecorators(
+    ApiBearerAuth('access-token'),
     ApiOperation({
-      summary: 'Atualiza o perfil do profissional',
-      description:
-        'Atualiza os dados específicos do perfil profissional vinculado ao usuário informado.',
+      summary: isAdmin
+        ? 'Atualiza o perfil de um profissional como administrador'
+        : 'Atualiza o próprio perfil do profissional',
+      description: isAdmin
+        ? 'Atualiza os dados específicos do perfil de qualquer profissional. Esta operação exige autenticação e perfil de administrador.'
+        : 'Atualiza os dados específicos do perfil do profissional autenticado.',
     }),
-    ApiUuidParam('userId', 'ID do usuário profissional.'),
+    ...(isAdmin
+      ? [ApiUuidParam('userId', 'ID do usuário profissional.')]
+      : []),
     ApiBody({
       required: true,
       schema: professionalProfileUpdateRequestSchema,
@@ -30,8 +45,8 @@ export function UpdateProfessionalProfileApiDocs(): MethodDecorator {
       schema: professionalProfileResponseSchema,
     }),
     ApiCommonErrorResponses({
-      includeUnauthorized: false,
-      includeForbidden: false,
+      includeUnauthorized: true,
+      includeForbidden: true,
     }),
   );
 }

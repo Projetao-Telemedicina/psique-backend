@@ -9,7 +9,7 @@ import {
   type OpenAPIObject,
   SwaggerModule,
 } from '@nestjs/swagger';
-import { AppModule } from './app.module.js';
+import { AppModule } from './app.module';
 
 const logger = new Logger('Swagger');
 const nodeRequire = createRequire(__filename);
@@ -94,7 +94,7 @@ function setupApiDocumentation(
         bearerFormat: 'JWT',
         description: 'Informe o token abaixo.',
       },
-      'jwt-auth',
+      'access-token',
     )
     .build();
 
@@ -149,3 +149,4 @@ void bootstrap().catch((error: unknown) => {
 
   logger.error('Falha ao iniciar a aplicacao.');
 });
+

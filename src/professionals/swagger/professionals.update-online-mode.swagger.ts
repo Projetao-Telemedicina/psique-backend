@@ -1,45 +1,52 @@
 import { applyDecorators } from '@nestjs/common';
 import {
-    ApiBody,
-    ApiOkResponse,
-    ApiOperation,
-    ApiParam,
+  ApiBearerAuth,
+  ApiBody,
+  ApiOkResponse,
+  ApiOperation,
 } from '@nestjs/swagger';
 import {
-    ApiCommonErrorResponses,
-    ApiUuidParam,
-} from '../../common/swagger/index.js';
+  ApiCommonErrorResponses,
+  ApiUuidParam,
+} from '../../common/swagger/index';
 import {
-    professionalProfileResponseSchema,
-    professionalProfileUpdateRequestSchema,
-} from './professionals.schemas.js';
+  professionalOnlineModeUpdateRequestSchema,
+  professionalProfileResponseSchema,
+} from './professionals.schemas';
 
-export function UpdateProfessionalOnlineModeApiDocs(): MethodDecorator {
-    return applyDecorators(
-        ApiOperation({
-            summary: 'Atualiza o status online do profissional',
-            description: 'Atualiza o status online do profissional vinculado ao usuário informado.',
-        }),
-        ApiUuidParam(
-            'userId', 'ID do usuário profissional.'
-        ),
-        ApiParam({
-            name: 'onlineMode',
-            description: 'Novo status online do profissional. Valores possíveis: ONLINE, OFFLINE.',
-            required: true,
-            enum: ['ONLINE', 'OFFLINE'],
-        }),
-        ApiBody({
-            required: true,
-            schema: professionalProfileUpdateRequestSchema,
-        }),
-        ApiOkResponse({
-            description: 'Status online do profissional atualizado com sucesso.',
-            schema: professionalProfileResponseSchema,
-        }),
-        ApiCommonErrorResponses({
-            includeUnauthorized: false,
-            includeForbidden: false,
-        }),
-    );
+type UpdateProfessionalOnlineModeApiDocsOptions = {
+  admin?: boolean;
+};
+
+export function UpdateProfessionalOnlineModeApiDocs(
+  options: UpdateProfessionalOnlineModeApiDocsOptions = {},
+): MethodDecorator {
+  const isAdmin = options.admin ?? false;
+
+  return applyDecorators(
+    ApiBearerAuth('access-token'),
+    ApiOperation({
+      summary: isAdmin
+        ? 'Atualiza o status online de um profissional como administrador'
+        : 'Atualiza o próprio status online do profissional',
+      description: isAdmin
+        ? 'Atualiza o status online de qualquer profissional. Esta operação exige autenticação e perfil de administrador.'
+        : 'Atualiza o status online do profissional autenticado.',
+    }),
+    ...(isAdmin
+      ? [ApiUuidParam('userId', 'ID do usuário profissional.')]
+      : []),
+    ApiBody({
+      required: true,
+      schema: professionalOnlineModeUpdateRequestSchema,
+    }),
+    ApiOkResponse({
+      description: 'Status online do profissional atualizado com sucesso.',
+      schema: professionalProfileResponseSchema,
+    }),
+    ApiCommonErrorResponses({
+      includeUnauthorized: true,
+      includeForbidden: true,
+    }),
+  );
 }

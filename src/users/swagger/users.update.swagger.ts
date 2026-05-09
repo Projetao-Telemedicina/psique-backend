@@ -7,11 +7,11 @@ import {
 import {
   ApiCommonErrorResponses,
   ApiUuidParam,
-} from '../../common/swagger/index.js';
+} from '../../common/swagger/index';
 import {
   updateUserRequestSchema,
   userListItemSchema,
-} from './users.schemas.js';
+} from './users.schemas';
 
 export function UpdateUserApiDocs(): MethodDecorator {
   return applyDecorators(
@@ -35,3 +35,4 @@ export function UpdateUserApiDocs(): MethodDecorator {
     }),
   );
 }
+

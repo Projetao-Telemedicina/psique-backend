@@ -5,7 +5,7 @@ import {
   roleEnumValues,
   userStatusEnumValues,
   uuidSchema,
-} from '../../common/swagger/index.js';
+} from '../../common/swagger/index';
 
 export const patientProfileRequestProperties = {
   emergencyContactName: {
@@ -105,3 +105,4 @@ export const patientProfileWithUserResponseSchema = {
     'user',
   ],
 };
+
