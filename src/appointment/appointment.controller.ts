@@ -1,30 +1,46 @@
+import { Roles } from '@/auth/decorators/roles.decorator';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/auth/guards/roles.guard';
 import {
-    Body,
-    Controller,
-    Get,
-    Param,
-    ParseUUIDPipe,
-    Patch,
-    Post,
-    Query,
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Get,
+  Param,
+  ParseIntPipe,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
-import { AppointmentStatus } from '@prisma/client';
+import { AppointmentStatus, Role } from '@prisma/client';
 import { AppointmentService } from './appointment.service';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentStatusDto } from './dto/update-appointment-status.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import {
-    AppointmentsApiTags,
-    CancelAppointmentApiDocs,
-    CreateAppointmentApiDocs,
-    GetAllAppointmentsApiDocs,
-    GetAppointmentByIdApiDocs,
-    MarkAppointmentAsCompletedApiDocs,
-    MarkAppointmentAsNoShowApiDocs,
-    UpdateAppointmentApiDocs,
-    UpdateAppointmentStatusApiDocs,
+  AppointmentsApiTags,
+  CancelAppointmentApiDocs,
+  CreateAppointmentApiDocs,
+  GetAllAppointmentsApiDocs,
+  GetAppointmentByIdApiDocs,
+  GetAppointmentHistoryApiDocs,
+  GetUpcomingAppointmentsApiDocs,
+  MarkAppointmentAsCompletedApiDocs,
+  MarkAppointmentAsNoShowApiDocs,
+  UpdateAppointmentApiDocs,
+  UpdateAppointmentStatusApiDocs,
 } from './swagger/index';
+
+type AuthenticatedRequest = {
+  user: {
+    id: string;
+    role: Role;
+  };
+};
 
 @AppointmentsApiTags()
 @Controller('appointments')
@@ -32,45 +48,55 @@ export class AppointmentController {
   constructor(private readonly appointmentService: AppointmentService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @CreateAppointmentApiDocs()
   create(@Body() dto: CreateAppointmentDto) {
     return this.appointmentService.create(dto);
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @GetAllAppointmentsApiDocs()
   getAll(@Query('status') status?: AppointmentStatus) {
     return this.appointmentService.getAll(status);
   }
 
-  // @Get('upcoming')
-  // @GetUpcomingAppointmentsApiDocs()
-  // getUpcoming(@CurrentUser() user: AuthUser) {
-  //   return this.appointmentService.getUpcomingAppointments(user.id, user.role);
-  // }
+  @Get('me/upcoming')
+  @UseGuards(JwtAuthGuard)
+  @GetUpcomingAppointmentsApiDocs()
+  getUpcoming(@Req() request: AuthenticatedRequest) {
+    return this.appointmentService.getUpcomingAppointments(
+      request.user.id,
+      request.user.role,
+    );
+  }
 
-  // @Get('history')
-  // @GetAppointmentHistoryApiDocs()
-  // getHistory(
-  //   @CurrentUser() user: AuthUser,
-  //   @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-  //   @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
-  // ) {
-  //   return this.appointmentService.getAppointmentHistory(
-  //     user.id,
-  //     user.role,
-  //     page,
-  //     limit,
-  //   );
-  // }
+  @Get('me/history')
+  @UseGuards(JwtAuthGuard)
+  @GetAppointmentHistoryApiDocs()
+  getHistory(
+    @Req() request: AuthenticatedRequest,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    return this.appointmentService.getAppointmentHistory(
+      request.user.id,
+      request.user.role,
+      page,
+      limit,
+    );
+  }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   @GetAppointmentByIdApiDocs()
   getById(@Param('id', ParseUUIDPipe) id: string) {
     return this.appointmentService.getById(id);
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   @UpdateAppointmentApiDocs()
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -80,6 +106,8 @@ export class AppointmentController {
   }
 
   @Patch(':id/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @UpdateAppointmentStatusApiDocs()
   updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
@@ -89,18 +117,23 @@ export class AppointmentController {
   }
 
   @Patch(':id/complete')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PROFESSIONAL, Role.ADMIN)
   @MarkAppointmentAsCompletedApiDocs()
   markAsCompleted(@Param('id', ParseUUIDPipe) id: string) {
     return this.appointmentService.markAsCompleted(id);
   }
 
   @Patch(':id/no-show')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PROFESSIONAL, Role.ADMIN)
   @MarkAppointmentAsNoShowApiDocs()
   markAsNoShow(@Param('id', ParseUUIDPipe) id: string) {
     return this.appointmentService.markAsNoShow(id);
   }
 
   @Patch(':id/cancel')
+  @UseGuards(JwtAuthGuard)
   @CancelAppointmentApiDocs()
   cancel(
     @Param('id', ParseUUIDPipe) id: string,
