@@ -1,7 +1,7 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from '../src/prisma/prisma.service.js';
-import { AppModule } from './../src/app.module.js';
+import { PrismaService } from '../src/prisma/prisma.service';
+import { AppModule } from './../src/app.module';
 
 export type E2eAppContext = {
   app: INestApplication;
@@ -33,3 +33,4 @@ export async function createE2eApp(): Promise<E2eAppContext> {
 export async function resetDatabase(prisma: PrismaService): Promise<void> {
   await prisma.user.deleteMany();
 }
+
