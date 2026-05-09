@@ -5,13 +5,13 @@ import {
   roleEnumValues,
   userStatusEnumValues,
   uuidSchema,
-} from '../../common/swagger/index.js';
-import { patientProfileRequestSchema, patientProfileResponseSchema } from '../../patients/swagger/index.js';
+} from '../../common/swagger/index';
+import { patientProfileRequestSchema, patientProfileResponseSchema } from '../../patients/swagger/index';
 import {
   professionalProfileCreateRequestSchema,
   professionalProfileResponseSchema,
   professionalProfileUpdateRequestSchema,
-} from '../../professionals/swagger/index.js';
+} from '../../professionals/swagger/index';
 
 const userCreateBaseProperties = {
   name: {
@@ -268,3 +268,4 @@ export const updateUserRequestSchema = {
     professionalProfile: professionalProfileUpdateRequestSchema,
   },
 };
+

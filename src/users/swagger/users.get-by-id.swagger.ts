@@ -3,8 +3,8 @@ import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import {
   ApiCommonErrorResponses,
   ApiUuidParam,
-} from '../../common/swagger/index.js';
-import { userListItemSchema } from './users.schemas.js';
+} from '../../common/swagger/index';
+import { userListItemSchema } from './users.schemas';
 
 export function GetUserByIdApiDocs(): MethodDecorator {
   return applyDecorators(
@@ -24,3 +24,4 @@ export function GetUserByIdApiDocs(): MethodDecorator {
     }),
   );
 }
+
