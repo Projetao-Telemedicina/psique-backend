@@ -375,6 +375,7 @@ model AppointmentRescheduleRequest {
   id                    String   @id @default(uuid()) @map("request_id")
   appointmentId         String   @map("appointment_id")
   requestedBy           String   @map("requested_by")
+  status                RescheduleRequestStatus @default(PENDING)
   suggestedStartsAt     DateTime @map("suggested_starts_at")
   suggestedEndsAt       DateTime @map("suggested_ends_at")
   patientConfirmed      Boolean? @map("patient_confirmed")

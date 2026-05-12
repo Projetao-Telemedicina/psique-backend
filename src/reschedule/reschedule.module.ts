@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { RescheduleService } from './reschedule.service';
 import { RescheduleController } from './reschedule.controller';
-import { AppointmentService } from '@/appointment/appointment.service';
+import { AppointmentModule } from '@/appointment/appointment.module';
+import { PrismaModule } from '@/prisma';
 
 @Module({
-  imports: [AppointmentService],
+  imports: [AppointmentModule, PrismaModule],
   controllers: [RescheduleController],
   providers: [RescheduleService],
 })

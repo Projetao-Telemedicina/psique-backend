@@ -8,6 +8,7 @@ import { ProfessionalsModule } from './professionals/professionals.module';
 import { UsersModule } from './users/users.module';
 import { RescheduleModule } from './reschedule/reschedule.module';
 import { AuthModule } from './auth/auth.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AuthModule } from './auth/auth.module';
     ProfessionalsModule,
     AppointmentModule,
     RescheduleModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService],
