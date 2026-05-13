@@ -1,18 +1,18 @@
+import { GoogleCalendarService } from '@/google-calendar/google-calendar.service';
 import { PrismaService } from '@/prisma/index';
 import {
   BadRequestException,
   ConflictException,
-  NotFoundException,
+  ForbiddenException,
   Injectable,
-  ForbiddenException
+  NotFoundException
 } from '@nestjs/common';
+import { AppointmentCanceledBy, AppointmentStatus, Prisma, Role } from '@prisma/client';
+import { CertificateService } from './certificate/certificate.service';
+import { CanJoinResponseDto } from './dto/can-join-appointment.dto';
+import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
-import { AppointmentCanceledBy, AppointmentStatus, Prisma, Role } from '@prisma/client';
-import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
-import { GoogleCalendarService } from '@/google-calendar/google-calendar.service';
-import { CanJoinResponseDto } from './dto/can-join-appointment.dto';
-import { CertificateService } from './certificate/certificate.service';
 
 @Injectable()
 export class AppointmentService {
@@ -136,17 +136,15 @@ export class AppointmentService {
       include: isPatient
         ? {
             professional: {
-              include: {
+              select: {
+                specialty: true,
                 user: { select: { name: true, avatarUrl: true } },
               },
-              select: { specialty: true }
             },
           }
         : {
             patient: {
-              include: {
-                user: { select: { name: true, avatarUrl: true } },
-              },
+              select: { user: { select: { name: true, avatarUrl: true } } },
             },
           },
     });
@@ -174,17 +172,15 @@ export class AppointmentService {
       include: isPatient
         ? {
             professional: {
-              include: {
+              select: {
+                specialty: true,
                 user: { select: { name: true, avatarUrl: true } },
               },
-              select: { specialty: true },
             },
           }
         : {
             patient: {
-              include: {
-                user: { select: { name: true, avatarUrl: true } },
-              },
+              select: { user: { select: { name: true, avatarUrl: true } } },
             },
           },
     });
