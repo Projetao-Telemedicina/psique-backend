@@ -1,12 +1,12 @@
 import {
-  appointmentCanceledByEnumValues,
-  appointmentStatusEnumValues,
-  dateTimeSchema,
-  nullableDateTimeSchema,
-  nullableStringSchema,
-  nullableUuidSchema,
-  uuidSchema,
-} from '../../common/swagger/index.js';
+    appointmentCanceledByEnumValues,
+    appointmentStatusEnumValues,
+    dateTimeSchema,
+    nullableDateTimeSchema,
+    nullableStringSchema,
+    nullableUuidSchema,
+    uuidSchema,
+} from '../../common/swagger';
 
 const userMiniSchema = {
   type: 'object',

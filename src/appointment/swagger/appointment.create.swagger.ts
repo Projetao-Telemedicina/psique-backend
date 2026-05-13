@@ -1,10 +1,10 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiBody, ApiCreatedResponse, ApiOperation } from '@nestjs/swagger';
-import { ApiCommonErrorResponses } from '../../common/swagger/index.js';
+import { ApiCommonErrorResponses } from '../../common/swagger';
 import {
-  createAppointmentRequestSchema,
-  createAppointmentResponseSchema,
-} from './appointment.schemas.js';
+    createAppointmentRequestSchema,
+    createAppointmentResponseSchema,
+} from './appointment.schemas';
 
 export function CreateAppointmentApiDocs(): MethodDecorator {
   return applyDecorators(

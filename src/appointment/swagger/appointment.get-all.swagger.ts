@@ -1,8 +1,8 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { AppointmentStatus } from '@prisma/client';
-import { ApiCommonErrorResponses } from '../../common/swagger/index.js';
-import { appointmentListResponseSchema } from './appointment.schemas.js';
+import { ApiCommonErrorResponses } from '../../common/swagger';
+import { appointmentListResponseSchema } from './appointment.schemas';
 
 export function GetAllAppointmentsApiDocs(): MethodDecorator {
   return applyDecorators(

@@ -5,8 +5,6 @@ export class UpdateRescheduleDto extends PartialType(
 	PickType(CreateRescheduleDto, [
 		'suggestedStartsAt',
 		'suggestedEndsAt',
-		'patientConfirmed',
-		'professionalConfirmed',
 		'expiresAt',
 	] as const),
 ) {}

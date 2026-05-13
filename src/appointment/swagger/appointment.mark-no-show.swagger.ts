@@ -1,7 +1,7 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
-import { ApiCommonErrorResponses } from '../../common/swagger/index.js';
-import { appointmentResponseSchema } from './appointment.schemas.js';
+import { ApiCommonErrorResponses } from '../../common/swagger';
+import { appointmentResponseSchema } from './appointment.schemas';
 
 export function MarkAppointmentAsNoShowApiDocs(): MethodDecorator {
   return applyDecorators(

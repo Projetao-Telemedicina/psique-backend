@@ -1,15 +1,15 @@
 import { applyDecorators } from '@nestjs/common';
 import {
-  ApiBody,
-  ApiOkResponse,
-  ApiOperation,
-  ApiParam,
+    ApiBody,
+    ApiOkResponse,
+    ApiOperation,
+    ApiParam,
 } from '@nestjs/swagger';
-import { ApiCommonErrorResponses } from '../../common/swagger/index.js';
+import { ApiCommonErrorResponses } from '../../common/swagger';
 import {
-  appointmentResponseSchema,
-  cancelAppointmentRequestSchema,
-} from './appointment.schemas.js';
+    appointmentResponseSchema,
+    cancelAppointmentRequestSchema,
+} from './appointment.schemas';
 
 export function CancelAppointmentApiDocs(): MethodDecorator {
   return applyDecorators(

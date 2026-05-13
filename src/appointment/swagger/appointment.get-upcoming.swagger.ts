@@ -1,7 +1,7 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
-import { ApiCommonErrorResponses } from '../../common/swagger/index.js';
-import { upcomingAppointmentsListResponseSchema } from './appointment.schemas.js';
+import { ApiCommonErrorResponses } from '../../common/swagger';
+import { upcomingAppointmentsListResponseSchema } from './appointment.schemas';
 
 export function GetUpcomingAppointmentsApiDocs(): MethodDecorator {
   return applyDecorators(
