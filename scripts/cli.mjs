@@ -253,6 +253,68 @@ async function ensureDevelopmentSetup() {
   );
 }
 
+async function runDevelopmentSeed() {
+  const selection = await askChoice('Run Seed', [
+    {
+      label: 'All entities',
+      value: {
+        args: ['run', 'db:seed'],
+        label: 'Running development seed for all entities',
+      },
+    },
+    {
+      label: 'Admins only',
+      value: {
+        args: ['run', 'db:seed', '--', '--entities=admins'],
+        label: 'Running development seed for admins',
+      },
+    },
+    {
+      label: 'Patients only',
+      value: {
+        args: ['run', 'db:seed', '--', '--entities=patients'],
+        label: 'Running development seed for patients',
+      },
+    },
+    {
+      label: 'Professionals only',
+      value: {
+        args: ['run', 'db:seed', '--', '--entities=professionals'],
+        label: 'Running development seed for professionals',
+      },
+    },
+    {
+      label: 'Admins and patients',
+      value: {
+        args: ['run', 'db:seed', '--', '--entities=admins,patients'],
+        label: 'Running development seed for admins and patients',
+      },
+    },
+    {
+      label: 'Admins and professionals',
+      value: {
+        args: ['run', 'db:seed', '--', '--entities=admins,professionals'],
+        label: 'Running development seed for admins and professionals',
+      },
+    },
+    {
+      label: 'Patients and professionals',
+      value: {
+        args: ['run', 'db:seed', '--', '--entities=patients,professionals'],
+        label: 'Running development seed for patients and professionals',
+      },
+    },
+  ]);
+
+  if (!selection) {
+    return;
+  }
+
+  closeRl();
+  await ensureDevelopmentSetup();
+  await runCommand('npm', selection.args, selection.label);
+}
+
 async function runE2eWithDatabase(jestArgs, label) {
   await runCommand('npm', ['run', 'test:e2e:local', '--', ...jestArgs], label);
 }
@@ -441,19 +503,23 @@ async function runTestsMenu() {
 
 function printHelp() {
   output.write(
-    `${paint('1. Run Project', color.bold, color.green)}\n` +
+      `${paint('1. Run Project', color.bold, color.green)}\n` +
       `   ${paint('Full setup', color.yellow)}\n` +
       `   Starts the development database, generates Prisma Client if needed,\n` +
       `   applies pending migrations, and starts the app in watch mode.\n\n` +
       `   ${paint('Quick modes', color.yellow)}\n` +
       `   Start only in watch mode, debug mode, or production mode.\n\n` +
-      `${paint('2. Run Tests', color.bold, color.green)}\n` +
+      `${paint('2. Run Seed', color.bold, color.green)}\n` +
+      `   ${paint('Selective development seed', color.yellow)}\n` +
+      `   Prepares the development database and lets you choose whether to seed\n` +
+      `   admins, patients, professionals, or a combination of them.\n\n` +
+      `${paint('3. Run Tests', color.bold, color.green)}\n` +
       `   ${paint('Unit tests', color.yellow)}\n` +
       `   Run everything or pick a specific module, file, and test case.\n\n` +
       `   ${paint('E2E tests', color.yellow)}\n` +
       `   Run everything locally with an isolated disposable database,\n` +
       `   or choose a specific module, file, and test case.\n\n` +
-      `${paint('3. Help', color.bold, color.green)}\n` +
+      `${paint('4. Help', color.bold, color.green)}\n` +
       `   Shows this help screen.\n`,
   );
 }
@@ -471,6 +537,7 @@ async function main() {
     'Main Menu',
     [
       { label: 'Run project', value: 'run-project' },
+      { label: 'Run seed', value: 'run-seed' },
       { label: 'Run tests', value: 'run-tests' },
       { label: 'Help', value: 'help' },
     ],
@@ -484,6 +551,11 @@ async function main() {
 
   if (action === 'run-tests') {
     await runTestsMenu();
+    return;
+  }
+
+  if (action === 'run-seed') {
+    await runDevelopmentSeed();
     return;
   }
 
