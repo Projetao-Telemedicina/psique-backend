@@ -21,3 +21,5 @@ export * from './appointment.tags.swagger.js';
 export * from './appointment.update-status.swagger.js';
 
 export * from './appointment.update.swagger.js';
+
+export * from './can-join-appointment.swagger.js';

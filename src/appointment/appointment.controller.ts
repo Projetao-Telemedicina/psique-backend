@@ -13,8 +13,10 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { AppointmentStatus, Role } from '@prisma/client';
 import { AppointmentService } from './appointment.service';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
@@ -24,6 +26,7 @@ import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import {
   AppointmentsApiTags,
   CancelAppointmentApiDocs,
+  CanJoinAppointmentApiDocs,
   CreateAppointmentApiDocs,
   GetAllAppointmentsApiDocs,
   GetAppointmentByIdApiDocs,
@@ -34,6 +37,7 @@ import {
   UpdateAppointmentApiDocs,
   UpdateAppointmentStatusApiDocs,
 } from './swagger/index';
+import { GenerateCertificateApiDocs } from './swagger/generate-certificate.swagger';
 
 type AuthenticatedRequest = {
   user: {
@@ -86,6 +90,38 @@ export class AppointmentController {
       page,
       limit,
     );
+  }
+
+  @Get(':id/can-join')
+  @UseGuards(JwtAuthGuard)
+  @CanJoinAppointmentApiDocs()
+  canJoin(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.appointmentService.canJoinAppointment(id, request.user.id);
+  }
+
+  @Get(':id/certificate')
+  @UseGuards(JwtAuthGuard)
+  @GenerateCertificateApiDocs()
+  async downloadCertificate(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() request: AuthenticatedRequest,
+    @Res() res: Response,
+  ) {
+    const buffer = await this.appointmentService.generateCertificate(
+      id,
+      request.user.id,
+    );
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="comprovante-${id}.pdf"`,
+      'Content-Length': buffer.length,
+    });
+
+    res.end(buffer);
   }
 
   @Get(':id')
