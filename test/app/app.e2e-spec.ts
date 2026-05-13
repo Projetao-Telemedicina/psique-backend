@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { E2eAppContext, createE2eApp } from 'test/e2e-helpers';
+import { E2eAppContext, createE2eApp } from '../e2e-helpers';
 
 describe('AppController (e2e)', () => {
   let context: E2eAppContext;
