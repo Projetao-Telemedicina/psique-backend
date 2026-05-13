@@ -2,6 +2,7 @@ import { applyDecorators } from '@nestjs/common';
 import { ApiBody, ApiCreatedResponse, ApiOperation } from '@nestjs/swagger';
 import { ApiCommonErrorResponses } from '../../common/swagger/index';
 import {
+  createUserRequestExamples,
   createUserRequestSchema,
   createUserResponseSchema,
 } from './auth.schemas';
@@ -16,6 +17,7 @@ export function RegisterAuthApiDocs(): MethodDecorator {
     ApiBody({
       required: true,
       schema: createUserRequestSchema,
+      examples: createUserRequestExamples,
     }),
     ApiCreatedResponse({
       description: 'Usuario cadastrado com sucesso.',
