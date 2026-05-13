@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
-import { E2eAppContext, createE2eApp, resetDatabase } from './e2e-helpers';
+import { E2eAppContext, createE2eApp, resetDatabase } from '../e2e-helpers';
 
 type AuthTokens = {
   accessToken: string;
@@ -253,4 +253,3 @@ describe('AuthController (e2e)', () => {
       .expect(401);
   });
 });
-
