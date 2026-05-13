@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { Role, UserStatus } from '@prisma/client';
-import { E2eAppContext, createE2eApp, resetDatabase } from './e2e-helpers';
+import { E2eAppContext, createE2eApp, resetDatabase } from '../e2e-helpers';
 
 describe('UsersController (e2e)', () => {
   let context: E2eAppContext;
@@ -62,7 +62,6 @@ describe('UsersController (e2e)', () => {
   });
 
   it('GET /users?status=ACTIVE returns only active users', async () => {
-    // 1 Ativo
     await context.prisma.user.create({
       data: {
         name: 'Active User',
@@ -73,7 +72,6 @@ describe('UsersController (e2e)', () => {
       },
     });
 
-    // 1 Inativo (Ruído para ser filtrado)
     await context.prisma.user.create({
       data: {
         name: 'Inactive User',
@@ -88,7 +86,7 @@ describe('UsersController (e2e)', () => {
       .get('/users?status=ACTIVE')
       .expect(200);
 
-    expect(response.body).toHaveLength(1); // Garante que o Inativo foi ignorado
+    expect(response.body).toHaveLength(1);
     expect(response.body[0]).toMatchObject({
       name: 'Active User',
       status: UserStatus.ACTIVE,
@@ -97,7 +95,6 @@ describe('UsersController (e2e)', () => {
   });
 
   it('GET /users?status=INACTIVE returns only inactive users', async () => {
-    // 1 Inativo
     await context.prisma.user.create({
       data: {
         name: 'Inactive User',
@@ -108,7 +105,6 @@ describe('UsersController (e2e)', () => {
       },
     });
 
-    // 1 Ativo (Ruído para ser filtrado)
     await context.prisma.user.create({
       data: {
         name: 'Active User',
@@ -123,7 +119,7 @@ describe('UsersController (e2e)', () => {
       .get('/users?status=INACTIVE')
       .expect(200);
 
-    expect(response.body).toHaveLength(1); // Garante que o Ativo foi ignorado
+    expect(response.body).toHaveLength(1);
     expect(response.body[0]).toMatchObject({
       name: 'Inactive User',
       status: UserStatus.INACTIVE,
@@ -132,7 +128,6 @@ describe('UsersController (e2e)', () => {
   });
 
   it('GET /users?status=BLOCKED returns only blocked users', async () => {
-    // 1 Bloqueado
     await context.prisma.user.create({
       data: {
         name: 'Blocked User',
@@ -143,7 +138,6 @@ describe('UsersController (e2e)', () => {
       },
     });
 
-    // 1 Ativo (Ruído para ser filtrado)
     await context.prisma.user.create({
       data: {
         name: 'Active User',
@@ -158,7 +152,7 @@ describe('UsersController (e2e)', () => {
       .get('/users?status=BLOCKED')
       .expect(200);
 
-    expect(response.body).toHaveLength(1); // Garante que o Ativo foi ignorado
+    expect(response.body).toHaveLength(1);
     expect(response.body[0]).toMatchObject({
       name: 'Blocked User',
       status: UserStatus.BLOCKED,
@@ -245,4 +239,3 @@ describe('UsersController (e2e)', () => {
     expect(persisted?.status).toBe(UserStatus.INACTIVE);
   });
 });
-

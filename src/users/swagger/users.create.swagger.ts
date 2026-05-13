@@ -6,6 +6,7 @@ import {
 } from '@nestjs/swagger';
 import { ApiCommonErrorResponses } from '../../common/swagger/index';
 import {
+  createUserRequestExamples,
   createUserRequestSchema,
   createUserResponseSchema,
 } from './users.schemas';
@@ -20,6 +21,7 @@ export function CreateUserApiDocs(): MethodDecorator {
     ApiBody({
       required: true,
       schema: createUserRequestSchema,
+      examples: createUserRequestExamples,
     }),
     ApiCreatedResponse({
       description: 'Usuário criado com sucesso.',

@@ -5,12 +5,18 @@ import {
   uuidSchema,
 } from '../../common/swagger/index';
 import {
+  createUserRequestExamples,
   createUserRequestSchema,
   createUserResponseSchema,
   userListItemSchema,
 } from '../../users/swagger/index';
 
-export { createUserRequestSchema, createUserResponseSchema, userListItemSchema };
+export {
+  createUserRequestExamples,
+  createUserRequestSchema,
+  createUserResponseSchema,
+  userListItemSchema,
+};
 
 export const loginRequestSchema = {
   type: 'object',

@@ -8,8 +8,10 @@
   "scripts": {
     "build": "nest build",
     "cli": "node ./scripts/cli.mjs",
+    "db:clear": "node ./scripts/clear-dev-db.mjs",
     "db:dev:up": "node ./scripts/docker-compose.mjs up dev",
     "db:dev:down": "node ./scripts/docker-compose.mjs down dev",
+    "db:seed": "node ./scripts/seed-dev.mjs",
     "db:test:up": "node ./scripts/docker-compose.mjs up test",
     "db:test:down": "node ./scripts/docker-compose.mjs down test",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
