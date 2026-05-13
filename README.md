@@ -44,6 +44,8 @@ $ npm run cli
 Available areas:
 
 - Run the project with a complete setup flow or quick run modes.
+- Execute the manual development seed with entity selection.
+- Clear the development database through the CLI with explicit confirmation.
 - Run unit or e2e tests, including module-level and individual test selection.
 - Show a built-in help screen.
 
@@ -82,6 +84,127 @@ To stop the local development database:
 ```bash
 $ npm run db:dev:down
 ```
+
+## Manual development seed
+
+The project now includes a manual seed to populate the development database with sample users. This seed does not run automatically when the API starts. It only runs when you explicitly choose it from the project CLI.
+
+Recommended flow:
+
+```bash
+$ npm run cli
+```
+
+In the CLI, choose:
+
+1. `Run seed`
+2. The desired option among all entities, only admins, only patients, only professionals, or the available combinations
+
+If you prefer to run it directly, the following script is also available:
+
+```bash
+$ npm run db:seed
+```
+
+Before running the seed manually, make sure the development database is available and the migrations have been applied. The CLI option already handles this preparation automatically.
+
+### Accounts created by the seed
+
+Default password for all accounts:
+
+```text
+Password123
+```
+
+Admins:
+
+- Amanda Freitas  
+  Email: `amanda.admin@psique.local`  
+  CPF: `52998224725`  
+  Phone: `85999990001`  
+  Status: `ACTIVE`  
+  Profile: administrator responsible for the platform operation.  
+
+- Bruno Martins  
+  Email: `bruno.admin@psique.local`  
+  CPF: `11144477735`  
+  Phone: `85999990002`  
+  Status: `ACTIVE`  
+  Profile: administrator focused on support and internal auditing.  
+
+Patients:
+
+- Marina Costa  
+  Email: `marina.patient@psique.local`  
+  CPF: `39053344705`  
+  Phone: `85988887711`  
+  Status: `ACTIVE`  
+  Birth date: `1993-05-10`  
+  Emergency contact: `Pedro Costa`  
+  Contact phone: `85977776666`  
+  Shares diary with professionals: `true`  
+  
+- Lucas Almeida  
+  Email: `lucas.patient@psique.local`  
+  CPF: `93541134780`   
+  Phone: `85988887722`  
+  Status: `ACTIVE`  
+  Birth date: `1990-11-02`  
+  Emergency contact: `Renata Almeida`  
+  Contact phone: `85977775555`  
+  Shares diary with professionals: `false`  
+
+Professionals:
+
+- Dra. Paula Siqueira  
+  Email: `paula.professional@psique.local`  
+  CPF: `12345678909`  
+  Phone: `85977770011`  
+  Status: `ACTIVE`  
+  CRP: `CRP-11/0001`  
+  Specialty: `Cognitive Behavioral Therapy`  
+  Approval: `APPROVED`  
+  Online status: `ONLINE`  
+  Available for emergency: `true`  
+  Gap between appointments: `15` minutes  
+
+
+- Dr. Rafael Nogueira  
+  Email: `rafael.professional@psique.local`  
+  CPF: `98765432100`  
+  Phone: `85977770022`  
+  Status: `ACTIVE`  
+  CRP: `CRP-11/0002`  
+  Specialty: `Organizational Psychology`  
+  Approval: `APPROVED`  
+  Online status: `OFFLINE`  
+  Available for emergency: `false`  
+  Gap between appointments: `30` minutes  
+
+The seed is idempotent by email. If you run it again, the same accounts are updated instead of duplicated.
+
+## Manual development database cleanup
+
+The project also includes a manual database cleanup flow for the development database. Like the seed flow, it does not run automatically and is only executed when you explicitly choose it in the CLI.
+
+Recommended flow:
+
+```bash
+$ npm run cli
+```
+
+In the CLI, choose:
+
+1. `Clear database`
+2. Confirm the cleanup operation
+
+If you prefer to run it directly, the following script is also available:
+
+```bash
+$ npm run db:clear
+```
+
+Before running the cleanup manually, make sure the development database is available and the migrations have been applied. The CLI option already handles this preparation automatically.
 
 ## Local test database
 
