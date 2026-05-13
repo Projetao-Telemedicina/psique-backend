@@ -315,6 +315,31 @@ async function runDevelopmentSeed() {
   await runCommand('npm', selection.args, selection.label);
 }
 
+async function runDatabaseCleanup() {
+  const confirmation = await askChoice('Clear Database', [
+    {
+      label: 'Yes, clear the development database',
+      value: {
+        confirmed: true,
+      },
+    },
+    {
+      label: 'No, go back',
+      value: {
+        confirmed: false,
+      },
+    },
+  ]);
+
+  if (!confirmation || !confirmation.confirmed) {
+    return;
+  }
+
+  closeRl();
+  await ensureDevelopmentSetup();
+  await runCommand('npm', ['run', 'db:clear'], 'Clearing development database');
+}
+
 async function runE2eWithDatabase(jestArgs, label) {
   await runCommand('npm', ['run', 'test:e2e:local', '--', ...jestArgs], label);
 }
@@ -513,13 +538,17 @@ function printHelp() {
       `   ${paint('Selective development seed', color.yellow)}\n` +
       `   Prepares the development database and lets you choose whether to seed\n` +
       `   admins, patients, professionals, or a combination of them.\n\n` +
-      `${paint('3. Run Tests', color.bold, color.green)}\n` +
+      `${paint('3. Clear Database', color.bold, color.green)}\n` +
+      `   ${paint('Development database cleanup', color.yellow)}\n` +
+      `   Prepares the development database and clears the current data only\n` +
+      `   when you explicitly confirm the operation.\n\n` +
+      `${paint('4. Run Tests', color.bold, color.green)}\n` +
       `   ${paint('Unit tests', color.yellow)}\n` +
       `   Run everything or pick a specific module, file, and test case.\n\n` +
       `   ${paint('E2E tests', color.yellow)}\n` +
       `   Run everything locally with an isolated disposable database,\n` +
       `   or choose a specific module, file, and test case.\n\n` +
-      `${paint('4. Help', color.bold, color.green)}\n` +
+      `${paint('5. Help', color.bold, color.green)}\n` +
       `   Shows this help screen.\n`,
   );
 }
@@ -538,6 +567,7 @@ async function main() {
     [
       { label: 'Run project', value: 'run-project' },
       { label: 'Run seed', value: 'run-seed' },
+      { label: 'Clear database', value: 'clear-database' },
       { label: 'Run tests', value: 'run-tests' },
       { label: 'Help', value: 'help' },
     ],
@@ -556,6 +586,11 @@ async function main() {
 
   if (action === 'run-seed') {
     await runDevelopmentSeed();
+    return;
+  }
+
+  if (action === 'clear-database') {
+    await runDatabaseCleanup();
     return;
   }
 

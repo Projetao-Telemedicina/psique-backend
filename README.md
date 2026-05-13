@@ -45,6 +45,7 @@ Available areas:
 
 - Run the project with a complete setup flow or quick run modes.
 - Execute the manual development seed with entity selection.
+- Clear the development database through the CLI with explicit confirmation.
 - Run unit or e2e tests, including module-level and individual test selection.
 - Show a built-in help screen.
 
@@ -181,6 +182,29 @@ Professionals:
   Gap between appointments: `30` minutes  
 
 The seed is idempotent by email. If you run it again, the same accounts are updated instead of duplicated.
+
+## Manual development database cleanup
+
+The project also includes a manual database cleanup flow for the development database. Like the seed flow, it does not run automatically and is only executed when you explicitly choose it in the CLI.
+
+Recommended flow:
+
+```bash
+$ npm run cli
+```
+
+In the CLI, choose:
+
+1. `Clear database`
+2. Confirm the cleanup operation
+
+If you prefer to run it directly, the following script is also available:
+
+```bash
+$ npm run db:clear
+```
+
+Before running the cleanup manually, make sure the development database is available and the migrations have been applied. The CLI option already handles this preparation automatically.
 
 ## Local test database
 
