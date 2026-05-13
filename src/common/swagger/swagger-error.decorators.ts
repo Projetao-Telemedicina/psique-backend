@@ -1,6 +1,7 @@
 import { applyDecorators } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiConflictResponse,
   ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
@@ -9,6 +10,7 @@ import {
 
 type CommonErrorResponseOptions = {
   includeBadRequest?: boolean;
+  includeConflict?: boolean;
   includeUnauthorized?: boolean;
   includeForbidden?: boolean;
   includeNotFound?: boolean;
@@ -19,6 +21,7 @@ type ErrorDescriptor = {
   statusCode: number;
   code:
     | 'BAD_REQUEST'
+    | 'CONFLICT'
     | 'UNAUTHORIZED'
     | 'FORBIDDEN'
     | 'NOT_FOUND'
@@ -33,6 +36,12 @@ const defaultErrors: Record<string, ErrorDescriptor> = {
     code: 'BAD_REQUEST',
     error: 'Bad Request',
     message: 'A requisição possui dados inválidos.',
+  },
+  conflict: {
+    statusCode: 409,
+    code: 'CONFLICT',
+    error: 'Conflict',
+    message: 'O recurso informado já existe ou viola uma restrição única.',
   },
   unauthorized: {
     statusCode: 401,
@@ -103,6 +112,15 @@ export function ApiCommonErrorResponses(
       ApiBadRequestResponse({
         description: 'Erro de validação da requisição.',
         schema: buildErrorSchema(defaultErrors.badRequest),
+      }),
+    );
+  }
+
+  if (options.includeConflict ?? false) {
+    decorators.push(
+      ApiConflictResponse({
+        description: 'Conflito com dados já existentes.',
+        schema: buildErrorSchema(defaultErrors.conflict),
       }),
     );
   }

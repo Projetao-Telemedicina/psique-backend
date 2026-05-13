@@ -1,7 +1,7 @@
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { createRequire } from 'node:module';
 import { parseEnv } from 'node:util';
 import {
@@ -12,7 +12,7 @@ import {
 import { AppModule } from './app.module';
 
 const logger = new Logger('Swagger');
-const nodeRequire = createRequire(join(dirname(__filename), 'main.js'));
+const nodeRequire = createRequire(__filename);
 
 function loadEnvironment(): void {
   const envPath = join(process.cwd(), '.env');
@@ -94,7 +94,7 @@ function setupApiDocumentation(
         bearerFormat: 'JWT',
         description: 'Informe o token abaixo.',
       },
-      'jwt-auth',
+      'access-token',
     )
     .build();
 
@@ -129,6 +129,16 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
 
+  app.enableCors();
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
   setupApiDocumentation(app);
 
   await app.listen(process.env.PORT ?? 3000);
@@ -142,3 +152,4 @@ void bootstrap().catch((error: unknown) => {
 
   logger.error('Falha ao iniciar a aplicacao.');
 });
+

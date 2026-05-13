@@ -29,6 +29,217 @@
 
 ```bash
 $ npm install
+$ npm run prisma:generate
+$ npm run cli
+```
+
+## Project CLI
+
+The project includes an interactive CLI to help with local development flows.
+
+```bash
+$ npm run cli
+```
+
+Available areas:
+
+- Run the project with a complete setup flow or quick run modes.
+- Execute the manual development seed with entity selection.
+- Clear the development database through the CLI with explicit confirmation.
+- Run unit or e2e tests, including module-level and individual test selection.
+- Show a built-in help screen.
+
+## Environment files
+
+- Copy `.env.example` to `.env` for local development.
+- Copy `.env.test.example` to `.env.test` for local e2e tests.
+- Do not commit real `.env` or `.env.test` files.
+
+## Local development database
+
+The development PostgreSQL database runs with Docker using `postgres:16`.
+
+```bash
+# start the development database
+$ npm run db:dev:up
+
+# generate the Prisma client
+$ npm run prisma:generate
+
+# apply migrations to the development database
+$ npm run prisma:migrate:dev
+
+# start the API in watch mode
+$ npm run start:dev
+```
+
+The development `DATABASE_URL` is:
+
+```text
+postgresql://psique:psique@localhost:54320/psique_dev?schema=public
+```
+
+To stop the local development database:
+
+```bash
+$ npm run db:dev:down
+```
+
+## Manual development seed
+
+The project now includes a manual seed to populate the development database with sample users. This seed does not run automatically when the API starts. It only runs when you explicitly choose it from the project CLI.
+
+Recommended flow:
+
+```bash
+$ npm run cli
+```
+
+In the CLI, choose:
+
+1. `Run seed`
+2. The desired option among all entities, only admins, only patients, only professionals, or the available combinations
+
+If you prefer to run it directly, the following script is also available:
+
+```bash
+$ npm run db:seed
+```
+
+Before running the seed manually, make sure the development database is available and the migrations have been applied. The CLI option already handles this preparation automatically.
+
+### Accounts created by the seed
+
+Default password for all accounts:
+
+```text
+Password123
+```
+
+Admins:
+
+- Amanda Freitas  
+  Email: `amanda.admin@psique.local`  
+  CPF: `52998224725`  
+  Phone: `85999990001`  
+  Status: `ACTIVE`  
+  Profile: administrator responsible for the platform operation.  
+
+- Bruno Martins  
+  Email: `bruno.admin@psique.local`  
+  CPF: `11144477735`  
+  Phone: `85999990002`  
+  Status: `ACTIVE`  
+  Profile: administrator focused on support and internal auditing.  
+
+Patients:
+
+- Marina Costa  
+  Email: `marina.patient@psique.local`  
+  CPF: `39053344705`  
+  Phone: `85988887711`  
+  Status: `ACTIVE`  
+  Birth date: `1993-05-10`  
+  Emergency contact: `Pedro Costa`  
+  Contact phone: `85977776666`  
+  Shares diary with professionals: `true`  
+  
+- Lucas Almeida  
+  Email: `lucas.patient@psique.local`  
+  CPF: `93541134780`   
+  Phone: `85988887722`  
+  Status: `ACTIVE`  
+  Birth date: `1990-11-02`  
+  Emergency contact: `Renata Almeida`  
+  Contact phone: `85977775555`  
+  Shares diary with professionals: `false`  
+
+Professionals:
+
+- Dra. Paula Siqueira  
+  Email: `paula.professional@psique.local`  
+  CPF: `12345678909`  
+  Phone: `85977770011`  
+  Status: `ACTIVE`  
+  CRP: `CRP-11/0001`  
+  Specialty: `Cognitive Behavioral Therapy`  
+  Approval: `APPROVED`  
+  Online status: `ONLINE`  
+  Available for emergency: `true`  
+  Gap between appointments: `15` minutes  
+
+
+- Dr. Rafael Nogueira  
+  Email: `rafael.professional@psique.local`  
+  CPF: `98765432100`  
+  Phone: `85977770022`  
+  Status: `ACTIVE`  
+  CRP: `CRP-11/0002`  
+  Specialty: `Organizational Psychology`  
+  Approval: `APPROVED`  
+  Online status: `OFFLINE`  
+  Available for emergency: `false`  
+  Gap between appointments: `30` minutes  
+
+The seed is idempotent by email. If you run it again, the same accounts are updated instead of duplicated.
+
+## Manual development database cleanup
+
+The project also includes a manual database cleanup flow for the development database. Like the seed flow, it does not run automatically and is only executed when you explicitly choose it in the CLI.
+
+Recommended flow:
+
+```bash
+$ npm run cli
+```
+
+In the CLI, choose:
+
+1. `Clear database`
+2. Confirm the cleanup operation
+
+If you prefer to run it directly, the following script is also available:
+
+```bash
+$ npm run db:clear
+```
+
+Before running the cleanup manually, make sure the development database is available and the migrations have been applied. The CLI option already handles this preparation automatically.
+
+## Local test database
+
+The e2e database is isolated from development and uses a separate Docker Compose file.
+
+```bash
+# start the test database
+$ npm run db:test:up
+
+# apply migrations to the test database
+$ npm run prisma:migrate:test
+```
+
+The test `DATABASE_URL` is:
+
+```text
+postgresql://test:test@localhost:5433/psique_test?schema=public
+```
+
+To stop and discard the local test database:
+
+```bash
+$ npm run db:test:down
+```
+
+## Prisma 7
+
+This project uses Prisma ORM 7 with PostgreSQL and the `@prisma/adapter-pg` driver adapter.
+
+```bash
+# generate the client
+$ npm run prisma:generate
+
+# inspect data locally
+$ npm run prisma:studio
 ```
 
 ## Compile and run the project
@@ -58,11 +269,46 @@ http://localhost:3000/api
 # unit tests
 $ npm run test
 
-# e2e tests
+# e2e tests with Docker + isolated database
+$ npm run test:e2e:local
+
+# e2e tests for CI/already-prepared database
 $ npm run test:e2e
 
 # test coverage
 $ npm run test:cov
+```
+
+`npm run test:e2e:local` performs this flow automatically:
+
+1. Starts the disposable PostgreSQL test container.
+2. Runs `prisma generate`.
+3. Applies Prisma migrations to the test database.
+4. Executes the e2e suite.
+5. Stops and removes the test container.
+
+## CI workflow
+
+The GitHub Actions workflow has three jobs:
+
+- `lint`: runs `npm ci`, `npm run prisma:generate`, and `npm run lint`.
+- `unit-tests`: runs `npm ci`, `npm run prisma:generate`, and `npm run test`.
+- `e2e-tests`: loads the CI env file, starts a disposable PostgreSQL 16 container with Docker Compose, runs `npm ci`, `npm run prisma:generate`, `npx prisma migrate deploy`, and `npm run test:e2e`.
+
+The CI does not use production or staging databases. All CI environment variables come from the `CI_ENV_FILE` GitHub Secret.
+
+Required GitHub Secret:
+
+- `secrets.CI_ENV_FILE`
+
+Example content:
+
+```env
+NODE_ENV=test
+DATABASE_URL=postgresql://test:test@localhost:5432/psique_test?schema=public
+CI_POSTGRES_DB=psique_test
+CI_POSTGRES_USER=test
+CI_POSTGRES_PASSWORD=test
 ```
 
 ## Deployment
