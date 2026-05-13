@@ -196,6 +196,93 @@ export const createUserRequestSchema = {
   ],
 };
 
+export const createAdminRequestExample = {
+  summary: 'Cadastro de administrador',
+  value: {
+    name: 'Ana Gestora',
+    email: 'ana.gestora@psique.com',
+    password: 'SenhaSegura123',
+    cpf: '12345678901',
+    phone: '(86) 98888-1111',
+    birthDate: '1988-02-10',
+    gender: 'Feminino',
+    avatarUrl: 'https://cdn.psique.com/avatars/admin-01.jpg',
+    bio: 'Administradora da plataforma.',
+    cep: '64000-000',
+    state: 'PI',
+    city: 'Teresina',
+    neighborhood: 'Centro',
+    street: 'Rua Coelho Rodrigues',
+    number: '100',
+    complement: 'Sala 401',
+    role: 'ADMIN',
+  },
+};
+
+export const createPatientRequestExample = {
+  summary: 'Cadastro de paciente',
+  value: {
+    name: 'Maria Oliveira',
+    email: 'maria.oliveira@psique.com',
+    password: 'SenhaSegura123',
+    cpf: '09425248451',
+    phone: '(86) 98888-7777',
+    birthDate: '1995-03-14',
+    gender: 'Feminino',
+    avatarUrl: 'https://cdn.psique.com/avatars/user-01.jpg',
+    bio: 'Perfil criado para acompanhamento psicologico.',
+    cep: '64000-000',
+    state: 'PI',
+    city: 'Teresina',
+    neighborhood: 'Centro',
+    street: 'Rua das Flores',
+    number: '123',
+    complement: 'Apto 202',
+    role: 'PATIENT',
+    patientProfile: {
+      emergencyContactName: 'Joao Oliveira',
+      emergencyContactPhone: '(86) 99999-0000',
+      shareDiaryWithProfessionals: true,
+    },
+  },
+};
+
+export const createProfessionalRequestExample = {
+  summary: 'Cadastro de profissional',
+  value: {
+    name: 'Dra. Maria Oliveira',
+    email: 'maria.oliveira@psique.com',
+    password: 'SenhaSegura123',
+    cpf: '09425248451',
+    phone: '(86) 98888-7777',
+    birthDate: '1995-03-14',
+    gender: 'Feminino',
+    avatarUrl: 'https://cdn.psique.com/avatars/user-01.jpg',
+    bio: 'Psicologa com foco em terapia cognitivo-comportamental.',
+    cep: '64000-000',
+    state: 'PI',
+    city: 'Teresina',
+    neighborhood: 'Centro',
+    street: 'Rua das Flores',
+    number: '123',
+    complement: 'Sala 202',
+    role: 'PROFESSIONAL',
+    professionalProfile: {
+      crp: '123456',
+      specialty: 'Terapia Cognitivo-Comportamental',
+      availableForEmergency: false,
+      autoAbsenceMessage: 'Retorno em ate 2 horas.',
+      gapBetweenAppointmentsMinutes: 15,
+    },
+  },
+};
+
+export const createUserRequestExamples = {
+  admin: createAdminRequestExample,
+  patient: createPatientRequestExample,
+  professional: createProfessionalRequestExample,
+};
+
 export const createUserResponseSchema = {
   oneOf: [
     {
