@@ -237,7 +237,7 @@ function runCommand(command, args, label) {
 async function ensureDevelopmentSetup() {
   await runCommand('npm', ['run', 'db:dev:up'], 'Starting development database');
 
-  const generatedClientPath = resolve(projectRoot, 'src/generated/prisma/client.ts');
+  const generatedClientPath = resolve(projectRoot, 'node_modules/.prisma/client/index.js');
 
   if (!existsSync(generatedClientPath)) {
     await runCommand('npm', ['run', 'prisma:generate'], 'Generating Prisma Client');
@@ -253,18 +253,8 @@ async function ensureDevelopmentSetup() {
   );
 }
 
-async function ensureTestSetup() {
-  await runCommand('npm', ['run', 'db:test:up'], 'Starting test database');
-  await runCommand(
-    process.execPath,
-    ['./scripts/prisma.mjs', '--env-file=.env.test', 'generate'],
-    'Generating Prisma Client for tests',
-  );
-  await runCommand('npm', ['run', 'prisma:migrate:test'], 'Applying test database migrations');
-}
-
-async function cleanupTestSetup() {
-  await runCommand('npm', ['run', 'db:test:down'], 'Stopping test database');
+async function runE2eWithDatabase(jestArgs, label) {
+  await runCommand('npm', ['run', 'test:e2e:local', '--', ...jestArgs], label);
 }
 
 async function runProjectMenu() {
@@ -328,16 +318,10 @@ async function runIndividualTest(kind, moduleEntry) {
     closeRl();
 
     if (kind === 'e2e') {
-      try {
-        await ensureTestSetup();
-        await runCommand(
-          process.execPath,
-          args,
-          `Running all tests in module ${moduleEntry.moduleName}`,
-        );
-      } finally {
-        await cleanupTestSetup();
-      }
+      await runE2eWithDatabase(
+        ['--runTestsByPath', ...paths],
+        `Running all tests in module ${moduleEntry.moduleName}`,
+      );
 
       return;
     }
@@ -381,12 +365,7 @@ async function runIndividualTest(kind, moduleEntry) {
   closeRl();
 
   if (kind === 'e2e') {
-    try {
-      await ensureTestSetup();
-      await runCommand(process.execPath, args, label);
-    } finally {
-      await cleanupTestSetup();
-    }
+    await runE2eWithDatabase(args.slice(e2eJestBaseArgs.length), label);
 
     return;
   }

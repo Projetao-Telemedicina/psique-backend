@@ -1,10 +1,5 @@
 generator client {
-  provider            = "prisma-client"
-  output              = "../src/generated/prisma"
-  engineType          = "client"
-  moduleFormat        = "esm"
-  generatedFileExtension = "ts"
-  importFileExtension = "js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -21,7 +16,6 @@ enum UserStatus {
   ACTIVE
   INACTIVE
   BLOCKED
-  PENDING_APPROVAL
 }
 
 enum ProfessionalApprovalStatus {
@@ -35,128 +29,128 @@ enum OnlineStatus {
   ONLINE
 }
 
-enum RequestStatus {
+enum ProfessionalRequestStatus {
   PENDING
   APPROVED
   REJECTED
 }
 
-enum AppointmentStatus {
-  SCHEDULED
-  RESCHEDULE_REQUESTED
-  CANCELED
-  COMPLETED
-  NO_SHOW
-}
+// enum AppointmentStatus {
+//   SCHEDULED
+//   RESCHEDULE_REQUESTED
+//   CANCELED
+//   COMPLETED
+//   NO_SHOW
+// }
 
-enum AppointmentCanceledBy {
-  PATIENT
-  PROFESSIONAL
-  ADMIN
-  SYSTEM
-}
+// enum AppointmentCanceledBy {
+//   PATIENT
+//   PROFESSIONAL
+//   ADMIN
+//   SYSTEM
+// }
 
-enum CalendarEventType {
-  PERSONAL_COMMITMENT
-  BLOCKED_TIME
-  BREAK
-}
+// enum CalendarEventType {
+//   PERSONAL_COMMITMENT
+//   BLOCKED_TIME
+//   BREAK
+// }
 
-enum ChatRoomStatus {
-  ACTIVE
-  ARCHIVED
-  READ_ONLY
-}
+// enum ChatRoomStatus {
+//   ACTIVE
+//   ARCHIVED
+//   READ_ONLY
+// }
 
-enum MessageType {
-  TEXT
-  IMAGE
-  FILE
-  SYSTEM
-}
+// enum MessageType {
+//   TEXT
+//   IMAGE
+//   FILE
+//   SYSTEM
+// }
 
-enum CouponCategory {
-  SINGLE_APPOINTMENT
-  PLAN_SUBSCRIPTION
-}
+// enum CouponCategory {
+//   SINGLE_APPOINTMENT
+//   PLAN_SUBSCRIPTION
+// }
 
-enum CouponDiscountType {
-  PERCENTAGE
-  FIXED
-}
+// enum CouponDiscountType {
+//   PERCENTAGE
+//   FIXED
+// }
 
-enum WalletTransactionType {
-  REFUND_CREDIT
-  APPOINTMENT_PAYMENT
-  MANUAL_ADJUSTMENT
-  PLAN_PAYMENT
-}
+// enum WalletTransactionType {
+//   REFUND_CREDIT
+//   APPOINTMENT_PAYMENT
+//   MANUAL_ADJUSTMENT
+//   PLAN_PAYMENT
+// }
 
-enum WalletTransactionDirection {
-  CREDIT
-  DEBIT
-}
+// enum WalletTransactionDirection {
+//   CREDIT
+//   DEBIT
+// }
 
-enum PaymentMethodType {
-  CARD
-  PIX
-  BOLETO
-  WALLET
-}
+// enum PaymentMethodType {
+//   CARD
+//   PIX
+//   BOLETO
+//   WALLET
+// }
 
-enum PaymentStatus {
-  PENDING
-  APPROVED
-  FAILED
-  REFUNDED
-  PARTIALLY_REFUNDED
-  CANCELED
-}
+// enum PaymentStatus {
+//   PENDING
+//   APPROVED
+//   FAILED
+//   REFUNDED
+//   PARTIALLY_REFUNDED
+//   CANCELED
+// }
 
-enum PaymentPurpose {
-  APPOINTMENT
-  PLAN_SUBSCRIPTION
-  PROFILE_PROMOTION
-}
+// enum PaymentPurpose {
+//   APPOINTMENT
+//   PLAN_SUBSCRIPTION
+//   PROFILE_PROMOTION
+// }
 
-enum PromotionStatus {
-  PENDING
-  ACTIVE
-  EXPIRED
-  CANCELED
-  FAILED
-}
+// enum PromotionStatus {
+//   PENDING
+//   ACTIVE
+//   EXPIRED
+//   CANCELED
+//   FAILED
+// }
 
-enum SubscriptionStatus {
-  PENDING
-  ACTIVE
-  OVERDUE
-  CANCELED
-  EXPIRED
-}
+// enum SubscriptionStatus {
+//   PENDING
+//   ACTIVE
+//   OVERDUE
+//   CANCELED
+//   EXPIRED
+// }
 
-enum VideoCallStatus {
-  WAITING
-  IN_PROGRESS
-  FINISHED
-  CANCELED
-}
+// enum VideoCallStatus {
+//   WAITING
+//   IN_PROGRESS
+//   FINISHED
+//   CANCELED
+// }
 
-enum PanicRequestStatus {
-  SEARCHING
-  ACCEPTED
-  TIMEOUT
-  CANCELED
-  FINISHED
-}
+// enum PanicRequestStatus {
+//   SEARCHING
+//   ACCEPTED
+//   TIMEOUT
+//   CANCELED
+//   FINISHED
+// }
 
-enum PanicOfferStatus {
-  SENT
-  VIEWED
-  ACCEPTED
-  REJECTED
-  EXPIRED
-}
+// enum PanicOfferStatus {
+//   SENT
+//   VIEWED
+//   ACCEPTED
+//   REJECTED
+//   EXPIRED
+// }
 
 model User {
   id           String     @id @default(uuid()) @map("user_id")
@@ -164,10 +158,13 @@ model User {
   cpf          String?    @unique
   email        String     @unique
   passwordHash String     @map("password_hash")
+  birthDate    DateTime?  @db.Date @map("birth_date")
+  gender       String?    @map("gender")
   role         Role
-  status       UserStatus @default(ACTIVE)
+  status       UserStatus @default(INACTIVE)
   phone        String?
   bio          String?
+  avatarUrl    String?    @map("avatar_url")
 
   cep          String?
   state        String?
@@ -182,22 +179,35 @@ model User {
 
   patientProfile      PatientProfile?
   professionalProfile ProfessionalProfile?
+  tokens              Token[]
 
   reviewedProfessionalRequests ProfessionalRequest[] @relation("ReviewedProfessionalRequests")
-  requestedReschedules          AppointmentRescheduleRequest[]
-  sentMessages                  Message[]
-  paymentMethods                PaymentMethod[]
-  subscriptions                 Subscription[]
-  payments                      Payment[]
-  userCoupons                   UserCoupon[]
-  notifications                 Notification[]
+  // requestedReschedules          AppointmentRescheduleRequest[]
+  // sentMessages                  Message[]
+  // paymentMethods                PaymentMethod[]
+  // subscriptions                 Subscription[]
+  // payments                      Payment[]
+  // userCoupons                   UserCoupon[]
+  // notifications                 Notification[]
 
   @@map("users")
 }
 
+model Token {
+  id         String   @id @default(uuid()) @map("token_id")
+  userId     String   @unique @map("user_id")
+  jwt        String
+  refreshJwt String   @map("refresh_jwt")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("tokens")
+}
+
 model PatientProfile {
   userId                      String   @id @map("user_id")
-  birthDate                   DateTime? @db.Date @map("birth_date")
   emergencyContactName        String?  @map("emergency_contact_name")
   emergencyContactPhone       String?  @map("emergency_contact_phone")
   shareDiaryWithProfessionals Boolean  @default(false) @map("share_diary_with_professionals")
@@ -206,12 +216,12 @@ model PatientProfile {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  appointments   Appointment[]
-  reviews        Review[]
-  chatRooms      ChatRoom[]
-  wallet         Wallet?
-  panicRequests  PanicRequest[]
-  diaryEntries   DiaryEntry[]
+  // appointments   Appointment[]
+  // reviews        Review[]
+  // chatRooms      ChatRoom[]
+  // wallet         Wallet?
+  // panicRequests  PanicRequest[]
+  // diaryEntries   DiaryEntry[]
 
   @@map("patient_profiles")
 }
@@ -233,15 +243,15 @@ model ProfessionalProfile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   requests        ProfessionalRequest[]
-  availabilities  ProfessionalAvailability[]
-  breaks          ProfessionalBreak[]
-  calendarEvents  ProfessionalCalendarEvent[]
-  appointments    Appointment[]
-  reviews         Review[]
-  chatRooms       ChatRoom[]
-  promotions      ProfessionalPromotion[]
-  acceptedPanics  PanicRequest[]      @relation("AcceptedProfessional")
-  panicOffers     PanicRequestOffer[]
+  // availabilities  ProfessionalAvailability[]
+  // breaks          ProfessionalBreak[]
+  // calendarEvents  ProfessionalCalendarEvent[]
+  // appointments    Appointment[]
+  // reviews         Review[]
+  // chatRooms       ChatRoom[]
+  // promotions      ProfessionalPromotion[]
+  // acceptedPanics  PanicRequest[]      @relation("AcceptedProfessional")
+  // panicOffers     PanicRequestOffer[]
 
   @@map("professional_profiles")
 }
@@ -249,7 +259,7 @@ model ProfessionalProfile {
 model ProfessionalRequest {
   id              String        @id @default(uuid()) @map("request_id")
   professionalId  String        @map("professional_id")
-  status          RequestStatus @default(PENDING)
+  status          ProfessionalRequestStatus @default(PENDING)
   rejectionReason String?       @map("rejection_reason")
   reviewedBy      String?       @map("reviewed_by")
   submittedAt     DateTime      @default(now()) @map("submitted_at")
@@ -275,410 +285,410 @@ model ProfessionalRequestDocument {
   @@map("professional_request_documents")
 }
 
-model ProfessionalAvailability {
-  id                  String  @id @default(uuid()) @map("availability_id")
-  professionalId      String  @map("professional_id")
-  weekday             Int
-  startTime           String  @map("start_time")
-  endTime             String  @map("end_time")
-  slotDurationMinutes Int     @default(50) @map("slot_duration_minutes")
-  isActive            Boolean @default(true) @map("is_active")
-
-  professional ProfessionalProfile @relation(fields: [professionalId], references: [userId], onDelete: Cascade)
-
-  @@map("professional_availability")
-}
-
-model ProfessionalBreak {
-  id             String   @id @default(uuid()) @map("break_id")
-  professionalId String   @map("professional_id")
-  weekday        Int?
-  breakDate      DateTime? @db.Date @map("break_date")
-  startTime      String   @map("start_time")
-  endTime        String   @map("end_time")
-  title          String?
-  isRecurring    Boolean  @default(false) @map("is_recurring")
-
-  professional ProfessionalProfile @relation(fields: [professionalId], references: [userId], onDelete: Cascade)
-
-  @@map("professional_breaks")
-}
-
-model ProfessionalCalendarEvent {
-  id             String            @id @default(uuid()) @map("event_id")
-  professionalId String            @map("professional_id")
-  type           CalendarEventType
-  title          String
-  description    String?
-  startsAt       DateTime          @map("starts_at")
-  endsAt         DateTime          @map("ends_at")
-  createdAt      DateTime          @default(now()) @map("created_at")
-  updatedAt      DateTime          @updatedAt @map("updated_at")
-
-  professional ProfessionalProfile @relation(fields: [professionalId], references: [userId], onDelete: Cascade)
-
-  @@map("professional_calendar_events")
-}
-
-model Appointment {
-  id                            String                 @id @default(uuid()) @map("appointment_id")
-  patientId                     String                 @map("patient_id")
-  professionalId                String                 @map("professional_id")
-  status                        AppointmentStatus      @default(SCHEDULED)
-  startsAt                      DateTime               @map("starts_at")
-  endsAt                        DateTime               @map("ends_at")
-  priceCents                    Int                    @map("price_cents")
-  confirmedAt                   DateTime?              @map("confirmed_at")
-  canceledBy                    AppointmentCanceledBy? @map("canceled_by")
-  cancellationReason            String?                @map("cancellation_reason")
-  canceledAt                    DateTime?              @map("canceled_at")
-  completedAt                   DateTime?              @map("completed_at")
-  rescheduledFromAppointmentId  String?                @map("rescheduled_from_appointment_id")
-  attendanceCertificateUrl      String?                @map("attendance_certificate_url")
-  createdAt                     DateTime               @default(now()) @map("created_at")
-  updatedAt                     DateTime               @updatedAt @map("updated_at")
-
-  patient      PatientProfile       @relation(fields: [patientId], references: [userId])
-  professional ProfessionalProfile  @relation(fields: [professionalId], references: [userId])
-
-  rescheduledFrom Appointment?  @relation("AppointmentRescheduleChain", fields: [rescheduledFromAppointmentId], references: [id])
-  rescheduledTo   Appointment[] @relation("AppointmentRescheduleChain")
-
-  rescheduleRequests AppointmentRescheduleRequest[]
-  review             Review?
-  chatRooms          ChatRoom[]
-  walletTransactions WalletTransaction[]
-  payments           Payment[]
-  videoCallSessions  VideoCallSession[]
-
-  @@map("appointments")
-}
-
-model AppointmentRescheduleRequest {
-  id                    String   @id @default(uuid()) @map("request_id")
-  appointmentId         String   @map("appointment_id")
-  requestedBy           String   @map("requested_by")
-  suggestedStartsAt     DateTime @map("suggested_starts_at")
-  suggestedEndsAt       DateTime @map("suggested_ends_at")
-  patientConfirmed      Boolean? @map("patient_confirmed")
-  professionalConfirmed Boolean? @map("professional_confirmed")
-  expiresAt             DateTime? @map("expires_at")
-  createdAt             DateTime @default(now()) @map("created_at")
-
-  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
-  requester   User        @relation(fields: [requestedBy], references: [id])
-
-  @@map("appointment_reschedule_requests")
-}
-
-model Review {
-  id             String   @id @default(uuid()) @map("review_id")
-  appointmentId  String   @unique @map("appointment_id")
-  patientId      String   @map("patient_id")
-  professionalId String   @map("professional_id")
-  rating         Int
-  comment        String?
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  appointment  Appointment         @relation(fields: [appointmentId], references: [id])
-  patient      PatientProfile      @relation(fields: [patientId], references: [userId])
-  professional ProfessionalProfile @relation(fields: [professionalId], references: [userId])
-
-  @@map("reviews")
-}
-
-model ChatRoom {
-  id             String         @id @default(uuid()) @map("room_id")
-  patientId      String         @map("patient_id")
-  professionalId String         @map("professional_id")
-  appointmentId  String?        @map("appointment_id")
-  status         ChatRoomStatus @default(ACTIVE)
-  createdAt      DateTime       @default(now()) @map("created_at")
-  archivedAt     DateTime?      @map("archived_at")
-
-  patient      PatientProfile      @relation(fields: [patientId], references: [userId])
-  professional ProfessionalProfile @relation(fields: [professionalId], references: [userId])
-  appointment  Appointment?        @relation(fields: [appointmentId], references: [id])
-
-  messages Message[]
-
-  @@map("chat_rooms")
-}
-
-model Message {
-  id              String      @id @default(uuid()) @map("message_id")
-  roomId          String      @map("room_id")
-  senderId        String      @map("sender_id")
-  type            MessageType @default(TEXT)
-  content         String?
-  isAutoGenerated Boolean     @default(false) @map("is_auto_generated")
-  sentAt          DateTime    @default(now()) @map("sent_at")
-  readAt          DateTime?   @map("read_at")
-
-  room   ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  sender User     @relation(fields: [senderId], references: [id])
-
-  attachments MessageAttachment[]
-
-  @@map("messages")
-}
-
-model MessageAttachment {
-  id         String @id @default(uuid()) @map("attachment_id")
-  messageId  String @map("message_id")
-  fileName   String @map("file_name")
-  fileUrl    String @map("file_url")
-  mimeType   String @map("mime_type")
-  sizeBytes  Int    @map("size_bytes")
-
-  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
-
-  @@map("message_attachments")
-}
-
-model Coupon {
-  id               String             @id @default(uuid()) @map("coupon_id")
-  code             String             @unique
-  title            String
-  description      String?
-  category         CouponCategory
-  discountType     CouponDiscountType @map("discount_type")
-  discountValue    Decimal            @db.Decimal(10, 2) @map("discount_value")
-  maxDiscountCents Int?               @map("max_discount_cents")
-  expiresAt        DateTime           @map("expires_at")
-  isActive         Boolean            @default(true) @map("is_active")
-  createdAt        DateTime           @default(now()) @map("created_at")
-
-  userCoupons UserCoupon[]
-
-  @@map("coupons")
-}
-
-model UserCoupon {
-  id        String   @id @default(uuid()) @map("user_coupon_id")
-  couponId  String   @map("coupon_id")
-  userId    String   @map("user_id")
-  claimedAt DateTime @default(now()) @map("claimed_at")
-  usedAt    DateTime? @map("used_at")
-  isUsed    Boolean  @default(false) @map("is_used")
-
-  coupon   Coupon    @relation(fields: [couponId], references: [id])
-  user     User      @relation(fields: [userId], references: [id])
-  payments Payment[]
-
-  @@map("user_coupons")
-}
-
-model Wallet {
-  id           String   @id @default(uuid()) @map("wallet_id")
-  patientId    String   @unique @map("patient_id")
-  balanceCents Int      @default(0) @map("balance_cents")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  patient      PatientProfile      @relation(fields: [patientId], references: [userId])
-  transactions WalletTransaction[]
-
-  @@map("wallets")
-}
-
-model WalletTransaction {
-  id            String                     @id @default(uuid()) @map("wallet_transaction_id")
-  walletId      String                     @map("wallet_id")
-  type          WalletTransactionType
-  direction     WalletTransactionDirection
-  amountCents   Int                        @map("amount_cents")
-  appointmentId String?                    @map("appointment_id")
-  description   String?
-  createdAt     DateTime                   @default(now()) @map("created_at")
-
-  wallet      Wallet       @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  appointment Appointment? @relation(fields: [appointmentId], references: [id])
-
-  @@map("wallet_transactions")
-}
-
-model PaymentMethod {
-  id            String            @id @default(uuid()) @map("payment_method_id")
-  userId        String            @map("user_id")
-  type          PaymentMethodType
-  gatewayToken  String            @map("gateway_token")
-  brand         String?
-  last4         String?
-  holderName    String?           @map("holder_name")
-  expiresMonth  Int?              @map("expires_month")
-  expiresYear   Int?              @map("expires_year")
-  isDefault     Boolean           @default(false) @map("is_default")
-  createdAt     DateTime          @default(now()) @map("created_at")
-
-  user     User      @relation(fields: [userId], references: [id])
-  payments Payment[]
-
-  @@map("payment_methods")
-}
-
-model Plan {
-  id           String   @id @default(uuid()) @map("plan_id")
-  name         String
-  description  String?
-  priceCents   Int      @map("price_cents")
-  billingCycle String   @map("billing_cycle")
-  isActive     Boolean  @default(true) @map("is_active")
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  subscriptions Subscription[]
-
-  @@map("plans")
-}
-
-model Subscription {
-  id                 String             @id @default(uuid()) @map("subscription_id")
-  userId             String             @map("user_id")
-  planId             String             @map("plan_id")
-  status             SubscriptionStatus @default(PENDING)
-  startedAt          DateTime?          @map("started_at")
-  currentPeriodStart DateTime?          @map("current_period_start")
-  currentPeriodEnd   DateTime?          @map("current_period_end")
-  canceledAt         DateTime?          @map("canceled_at")
-  createdAt          DateTime           @default(now()) @map("created_at")
-
-  user     User      @relation(fields: [userId], references: [id])
-  plan     Plan      @relation(fields: [planId], references: [id])
-  payments Payment[]
-
-  @@map("subscriptions")
-}
-
-model PromotionPlan {
-  id           String  @id @default(uuid()) @map("promotion_plan_id")
-  name         String
-  description  String?
-  priceCents   Int     @map("price_cents")
-  durationDays Int     @map("duration_days")
-  isActive     Boolean @default(true) @map("is_active")
-
-  promotions ProfessionalPromotion[]
-
-  @@map("promotion_plans")
-}
-
-model ProfessionalPromotion {
-  id              String          @id @default(uuid()) @map("promotion_id")
-  professionalId  String          @map("professional_id")
-  promotionPlanId String          @map("promotion_plan_id")
-  status          PromotionStatus @default(PENDING)
-  startsAt        DateTime?       @map("starts_at")
-  endsAt          DateTime?       @map("ends_at")
-  createdAt       DateTime        @default(now()) @map("created_at")
-
-  professional  ProfessionalProfile @relation(fields: [professionalId], references: [userId])
-  promotionPlan PromotionPlan       @relation(fields: [promotionPlanId], references: [id])
-  payments      Payment[]
-
-  @@map("professional_promotions")
-}
-
-model Payment {
-  id                  String        @id @default(uuid()) @map("payment_id")
-  userId              String        @map("user_id")
-  paymentMethodId     String?       @map("payment_method_id")
-  purpose             PaymentPurpose
-  appointmentId       String?       @map("appointment_id")
-  subscriptionId      String?       @map("subscription_id")
-  promotionId         String?       @map("promotion_id")
-  userCouponId        String?       @map("user_coupon_id")
-  originalAmountCents Int           @map("original_amount_cents")
-  discountAmountCents Int           @default(0) @map("discount_amount_cents")
-  walletAmountCents   Int           @default(0) @map("wallet_amount_cents")
-  finalAmountCents    Int           @map("final_amount_cents")
-  status              PaymentStatus @default(PENDING)
-  gatewayTransactionId String?      @map("gateway_transaction_id")
-  createdAt           DateTime      @default(now()) @map("created_at")
-  paidAt              DateTime?     @map("paid_at")
-
-  user          User                   @relation(fields: [userId], references: [id])
-  paymentMethod PaymentMethod?         @relation(fields: [paymentMethodId], references: [id])
-  appointment   Appointment?           @relation(fields: [appointmentId], references: [id])
-  subscription  Subscription?          @relation(fields: [subscriptionId], references: [id])
-  promotion     ProfessionalPromotion? @relation(fields: [promotionId], references: [id])
-  userCoupon    UserCoupon?            @relation(fields: [userCouponId], references: [id])
-
-  @@map("payments")
-}
-
-model VideoCallSession {
-  id             String          @id @default(uuid()) @map("session_id")
-  appointmentId  String?         @map("appointment_id")
-  panicRequestId String?         @map("panic_request_id")
-  providerRoomId String?         @map("provider_room_id")
-  providerName   String?         @map("provider_name")
-  startsAt       DateTime?       @map("starts_at")
-  endedAt        DateTime?       @map("ended_at")
-  status         VideoCallStatus @default(WAITING)
-  createdAt      DateTime        @default(now()) @map("created_at")
-
-  appointment  Appointment?  @relation(fields: [appointmentId], references: [id])
-  panicRequest PanicRequest? @relation(fields: [panicRequestId], references: [id])
-
-  @@map("video_call_sessions")
-}
-
-model PanicRequest {
-  id                     String             @id @default(uuid()) @map("panic_request_id")
-  patientId              String             @map("patient_id")
-  status                 PanicRequestStatus @default(SEARCHING)
-  requestedAt            DateTime           @default(now()) @map("requested_at")
-  timeoutAt              DateTime           @map("timeout_at")
-  acceptedProfessionalId String?            @map("accepted_professional_id")
-  acceptedAt             DateTime?          @map("accepted_at")
-  endedAt                DateTime?          @map("ended_at")
-
-  patient              PatientProfile       @relation(fields: [patientId], references: [userId])
-  acceptedProfessional ProfessionalProfile? @relation("AcceptedProfessional", fields: [acceptedProfessionalId], references: [userId])
-
-  offers            PanicRequestOffer[]
-  videoCallSessions VideoCallSession[]
-
-  @@map("panic_requests")
-}
-
-model PanicRequestOffer {
-  id             String           @id @default(uuid()) @map("offer_id")
-  panicRequestId String           @map("panic_request_id")
-  professionalId String           @map("professional_id")
-  status         PanicOfferStatus @default(SENT)
-  sentAt         DateTime         @default(now()) @map("sent_at")
-  respondedAt    DateTime?        @map("responded_at")
-
-  panicRequest PanicRequest       @relation(fields: [panicRequestId], references: [id], onDelete: Cascade)
-  professional ProfessionalProfile @relation(fields: [professionalId], references: [userId])
-
-  @@map("panic_request_offers")
-}
-
-model DiaryEntry {
-  id        String   @id @default(uuid()) @map("diary_entry_id")
-  patientId String   @map("patient_id")
-  feeling   String
-  symptom   String?
-  content   String?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  patient PatientProfile @relation(fields: [patientId], references: [userId], onDelete: Cascade)
-
-  @@map("diary_entries")
-}
-
-model Notification {
-  id        String   @id @default(uuid()) @map("notification_id")
-  userId    String   @map("user_id")
-  title     String
-  content   String
-  isRead    Boolean  @default(false) @map("is_read")
-  createdAt DateTime @default(now()) @map("created_at")
-  readAt    DateTime? @map("read_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("notifications")
-}
+// model ProfessionalAvailability {
+//   id                  String  @id @default(uuid()) @map("availability_id")
+//   professionalId      String  @map("professional_id")
+//   weekday             Int
+//   startTime           String  @map("start_time")
+//   endTime             String  @map("end_time")
+//   slotDurationMinutes Int     @default(50) @map("slot_duration_minutes")
+//   isActive            Boolean @default(true) @map("is_active")
+
+//   professional ProfessionalProfile @relation(fields: [professionalId], references: [userId], onDelete: Cascade)
+
+//   @@map("professional_availability")
+// }
+
+// model ProfessionalBreak {
+//   id             String   @id @default(uuid()) @map("break_id")
+//   professionalId String   @map("professional_id")
+//   weekday        Int?
+//   breakDate      DateTime? @db.Date @map("break_date")
+//   startTime      String   @map("start_time")
+//   endTime        String   @map("end_time")
+//   title          String?
+//   isRecurring    Boolean  @default(false) @map("is_recurring")
+
+//   professional ProfessionalProfile @relation(fields: [professionalId], references: [userId], onDelete: Cascade)
+
+//   @@map("professional_breaks")
+// }
+
+// model ProfessionalCalendarEvent {
+//   id             String            @id @default(uuid()) @map("event_id")
+//   professionalId String            @map("professional_id")
+//   type           CalendarEventType
+//   title          String
+//   description    String?
+//   startsAt       DateTime          @map("starts_at")
+//   endsAt         DateTime          @map("ends_at")
+//   createdAt      DateTime          @default(now()) @map("created_at")
+//   updatedAt      DateTime          @updatedAt @map("updated_at")
+
+//   professional ProfessionalProfile @relation(fields: [professionalId], references: [userId], onDelete: Cascade)
+
+//   @@map("professional_calendar_events")
+// }
+
+// model Appointment {
+//   id                            String                 @id @default(uuid()) @map("appointment_id")
+//   patientId                     String                 @map("patient_id")
+//   professionalId                String                 @map("professional_id")
+//   status                        AppointmentStatus      @default(SCHEDULED)
+//   startsAt                      DateTime               @map("starts_at")
+//   endsAt                        DateTime               @map("ends_at")
+//   priceCents                    Int                    @map("price_cents")
+//   confirmedAt                   DateTime?              @map("confirmed_at")
+//   canceledBy                    AppointmentCanceledBy? @map("canceled_by")
+//   cancellationReason            String?                @map("cancellation_reason")
+//   canceledAt                    DateTime?              @map("canceled_at")
+//   completedAt                   DateTime?              @map("completed_at")
+//   rescheduledFromAppointmentId  String?                @map("rescheduled_from_appointment_id")
+//   attendanceCertificateUrl      String?                @map("attendance_certificate_url")
+//   createdAt                     DateTime               @default(now()) @map("created_at")
+//   updatedAt                     DateTime               @updatedAt @map("updated_at")
+
+//   patient      PatientProfile       @relation(fields: [patientId], references: [userId])
+//   professional ProfessionalProfile  @relation(fields: [professionalId], references: [userId])
+
+//   rescheduledFrom Appointment?  @relation("AppointmentRescheduleChain", fields: [rescheduledFromAppointmentId], references: [id])
+//   rescheduledTo   Appointment[] @relation("AppointmentRescheduleChain")
+
+//   rescheduleRequests AppointmentRescheduleRequest[]
+//   review             Review?
+//   chatRooms          ChatRoom[]
+//   walletTransactions WalletTransaction[]
+//   payments           Payment[]
+//   videoCallSessions  VideoCallSession[]
+
+//   @@map("appointments")
+// }
+
+// model AppointmentRescheduleRequest {
+//   id                    String   @id @default(uuid()) @map("request_id")
+//   appointmentId         String   @map("appointment_id")
+//   requestedBy           String   @map("requested_by")
+//   suggestedStartsAt     DateTime @map("suggested_starts_at")
+//   suggestedEndsAt       DateTime @map("suggested_ends_at")
+//   patientConfirmed      Boolean? @map("patient_confirmed")
+//   professionalConfirmed Boolean? @map("professional_confirmed")
+//   expiresAt             DateTime? @map("expires_at")
+//   createdAt             DateTime @default(now()) @map("created_at")
+
+//   appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+//   requester   User        @relation(fields: [requestedBy], references: [id])
+
+//   @@map("appointment_reschedule_requests")
+// }
+
+// model Review {
+//   id             String   @id @default(uuid()) @map("review_id")
+//   appointmentId  String   @unique @map("appointment_id")
+//   patientId      String   @map("patient_id")
+//   professionalId String   @map("professional_id")
+//   rating         Int
+//   comment        String?
+//   createdAt      DateTime @default(now()) @map("created_at")
+
+//   appointment  Appointment         @relation(fields: [appointmentId], references: [id])
+//   patient      PatientProfile      @relation(fields: [patientId], references: [userId])
+//   professional ProfessionalProfile @relation(fields: [professionalId], references: [userId])
+
+//   @@map("reviews")
+// }
+
+// model ChatRoom {
+//   id             String         @id @default(uuid()) @map("room_id")
+//   patientId      String         @map("patient_id")
+//   professionalId String         @map("professional_id")
+//   appointmentId  String?        @map("appointment_id")
+//   status         ChatRoomStatus @default(ACTIVE)
+//   createdAt      DateTime       @default(now()) @map("created_at")
+//   archivedAt     DateTime?      @map("archived_at")
+
+//   patient      PatientProfile      @relation(fields: [patientId], references: [userId])
+//   professional ProfessionalProfile @relation(fields: [professionalId], references: [userId])
+//   appointment  Appointment?        @relation(fields: [appointmentId], references: [id])
+
+//   messages Message[]
+
+//   @@map("chat_rooms")
+// }
+
+// model Message {
+//   id              String      @id @default(uuid()) @map("message_id")
+//   roomId          String      @map("room_id")
+//   senderId        String      @map("sender_id")
+//   type            MessageType @default(TEXT)
+//   content         String?
+//   isAutoGenerated Boolean     @default(false) @map("is_auto_generated")
+//   sentAt          DateTime    @default(now()) @map("sent_at")
+//   readAt          DateTime?   @map("read_at")
+
+//   room   ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+//   sender User     @relation(fields: [senderId], references: [id])
+
+//   attachments MessageAttachment[]
+
+//   @@map("messages")
+// }
+
+// model MessageAttachment {
+//   id         String @id @default(uuid()) @map("attachment_id")
+//   messageId  String @map("message_id")
+//   fileName   String @map("file_name")
+//   fileUrl    String @map("file_url")
+//   mimeType   String @map("mime_type")
+//   sizeBytes  Int    @map("size_bytes")
+
+//   message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+//   @@map("message_attachments")
+// }
+
+// model Coupon {
+//   id               String             @id @default(uuid()) @map("coupon_id")
+//   code             String             @unique
+//   title            String
+//   description      String?
+//   category         CouponCategory
+//   discountType     CouponDiscountType @map("discount_type")
+//   discountValue    Decimal            @db.Decimal(10, 2) @map("discount_value")
+//   maxDiscountCents Int?               @map("max_discount_cents")
+//   expiresAt        DateTime           @map("expires_at")
+//   isActive         Boolean            @default(true) @map("is_active")
+//   createdAt        DateTime           @default(now()) @map("created_at")
+
+//   userCoupons UserCoupon[]
+
+//   @@map("coupons")
+// }
+
+// model UserCoupon {
+//   id        String   @id @default(uuid()) @map("user_coupon_id")
+//   couponId  String   @map("coupon_id")
+//   userId    String   @map("user_id")
+//   claimedAt DateTime @default(now()) @map("claimed_at")
+//   usedAt    DateTime? @map("used_at")
+//   isUsed    Boolean  @default(false) @map("is_used")
+
+//   coupon   Coupon    @relation(fields: [couponId], references: [id])
+//   user     User      @relation(fields: [userId], references: [id])
+//   payments Payment[]
+
+//   @@map("user_coupons")
+// }
+
+// model Wallet {
+//   id           String   @id @default(uuid()) @map("wallet_id")
+//   patientId    String   @unique @map("patient_id")
+//   balanceCents Int      @default(0) @map("balance_cents")
+//   updatedAt    DateTime @updatedAt @map("updated_at")
+
+//   patient      PatientProfile      @relation(fields: [patientId], references: [userId])
+//   transactions WalletTransaction[]
+
+//   @@map("wallets")
+// }
+
+// model WalletTransaction {
+//   id            String                     @id @default(uuid()) @map("wallet_transaction_id")
+//   walletId      String                     @map("wallet_id")
+//   type          WalletTransactionType
+//   direction     WalletTransactionDirection
+//   amountCents   Int                        @map("amount_cents")
+//   appointmentId String?                    @map("appointment_id")
+//   description   String?
+//   createdAt     DateTime                   @default(now()) @map("created_at")
+
+//   wallet      Wallet       @relation(fields: [walletId], references: [id], onDelete: Cascade)
+//   appointment Appointment? @relation(fields: [appointmentId], references: [id])
+
+//   @@map("wallet_transactions")
+// }
+
+// model PaymentMethod {
+//   id            String            @id @default(uuid()) @map("payment_method_id")
+//   userId        String            @map("user_id")
+//   type          PaymentMethodType
+//   gatewayToken  String            @map("gateway_token")
+//   brand         String?
+//   last4         String?
+//   holderName    String?           @map("holder_name")
+//   expiresMonth  Int?              @map("expires_month")
+//   expiresYear   Int?              @map("expires_year")
+//   isDefault     Boolean           @default(false) @map("is_default")
+//   createdAt     DateTime          @default(now()) @map("created_at")
+
+//   user     User      @relation(fields: [userId], references: [id])
+//   payments Payment[]
+
+//   @@map("payment_methods")
+// }
+
+// model Plan {
+//   id           String   @id @default(uuid()) @map("plan_id")
+//   name         String
+//   description  String?
+//   priceCents   Int      @map("price_cents")
+//   billingCycle String   @map("billing_cycle")
+//   isActive     Boolean  @default(true) @map("is_active")
+//   createdAt    DateTime @default(now()) @map("created_at")
+
+//   subscriptions Subscription[]
+
+//   @@map("plans")
+// }
+
+// model Subscription {
+//   id                 String             @id @default(uuid()) @map("subscription_id")
+//   userId             String             @map("user_id")
+//   planId             String             @map("plan_id")
+//   status             SubscriptionStatus @default(PENDING)
+//   startedAt          DateTime?          @map("started_at")
+//   currentPeriodStart DateTime?          @map("current_period_start")
+//   currentPeriodEnd   DateTime?          @map("current_period_end")
+//   canceledAt         DateTime?          @map("canceled_at")
+//   createdAt          DateTime           @default(now()) @map("created_at")
+
+//   user     User      @relation(fields: [userId], references: [id])
+//   plan     Plan      @relation(fields: [planId], references: [id])
+//   payments Payment[]
+
+//   @@map("subscriptions")
+// }
+
+// model PromotionPlan {
+//   id           String  @id @default(uuid()) @map("promotion_plan_id")
+//   name         String
+//   description  String?
+//   priceCents   Int     @map("price_cents")
+//   durationDays Int     @map("duration_days")
+//   isActive     Boolean @default(true) @map("is_active")
+
+//   promotions ProfessionalPromotion[]
+
+//   @@map("promotion_plans")
+// }
+
+// model ProfessionalPromotion {
+//   id              String          @id @default(uuid()) @map("promotion_id")
+//   professionalId  String          @map("professional_id")
+//   promotionPlanId String          @map("promotion_plan_id")
+//   status          PromotionStatus @default(PENDING)
+//   startsAt        DateTime?       @map("starts_at")
+//   endsAt          DateTime?       @map("ends_at")
+//   createdAt       DateTime        @default(now()) @map("created_at")
+
+//   professional  ProfessionalProfile @relation(fields: [professionalId], references: [userId])
+//   promotionPlan PromotionPlan       @relation(fields: [promotionPlanId], references: [id])
+//   payments      Payment[]
+
+//   @@map("professional_promotions")
+// }
+
+// model Payment {
+//   id                  String        @id @default(uuid()) @map("payment_id")
+//   userId              String        @map("user_id")
+//   paymentMethodId     String?       @map("payment_method_id")
+//   purpose             PaymentPurpose
+//   appointmentId       String?       @map("appointment_id")
+//   subscriptionId      String?       @map("subscription_id")
+//   promotionId         String?       @map("promotion_id")
+//   userCouponId        String?       @map("user_coupon_id")
+//   originalAmountCents Int           @map("original_amount_cents")
+//   discountAmountCents Int           @default(0) @map("discount_amount_cents")
+//   walletAmountCents   Int           @default(0) @map("wallet_amount_cents")
+//   finalAmountCents    Int           @map("final_amount_cents")
+//   status              PaymentStatus @default(PENDING)
+//   gatewayTransactionId String?      @map("gateway_transaction_id")
+//   createdAt           DateTime      @default(now()) @map("created_at")
+//   paidAt              DateTime?     @map("paid_at")
+
+//   user          User                   @relation(fields: [userId], references: [id])
+//   paymentMethod PaymentMethod?         @relation(fields: [paymentMethodId], references: [id])
+//   appointment   Appointment?           @relation(fields: [appointmentId], references: [id])
+//   subscription  Subscription?          @relation(fields: [subscriptionId], references: [id])
+//   promotion     ProfessionalPromotion? @relation(fields: [promotionId], references: [id])
+//   userCoupon    UserCoupon?            @relation(fields: [userCouponId], references: [id])
+
+//   @@map("payments")
+// }
+
+// model VideoCallSession {
+//   id             String          @id @default(uuid()) @map("session_id")
+//   appointmentId  String?         @map("appointment_id")
+//   panicRequestId String?         @map("panic_request_id")
+//   providerRoomId String?         @map("provider_room_id")
+//   providerName   String?         @map("provider_name")
+//   startsAt       DateTime?       @map("starts_at")
+//   endedAt        DateTime?       @map("ended_at")
+//   status         VideoCallStatus @default(WAITING)
+//   createdAt      DateTime        @default(now()) @map("created_at")
+
+//   appointment  Appointment?  @relation(fields: [appointmentId], references: [id])
+//   panicRequest PanicRequest? @relation(fields: [panicRequestId], references: [id])
+
+//   @@map("video_call_sessions")
+// }
+
+// model PanicRequest {
+//   id                     String             @id @default(uuid()) @map("panic_request_id")
+//   patientId              String             @map("patient_id")
+//   status                 PanicRequestStatus @default(SEARCHING)
+//   requestedAt            DateTime           @default(now()) @map("requested_at")
+//   timeoutAt              DateTime           @map("timeout_at")
+//   acceptedProfessionalId String?            @map("accepted_professional_id")
+//   acceptedAt             DateTime?          @map("accepted_at")
+//   endedAt                DateTime?          @map("ended_at")
+
+//   patient              PatientProfile       @relation(fields: [patientId], references: [userId])
+//   acceptedProfessional ProfessionalProfile? @relation("AcceptedProfessional", fields: [acceptedProfessionalId], references: [userId])
+
+//   offers            PanicRequestOffer[]
+//   videoCallSessions VideoCallSession[]
+
+//   @@map("panic_requests")
+// }
+
+// model PanicRequestOffer {
+//   id             String           @id @default(uuid()) @map("offer_id")
+//   panicRequestId String           @map("panic_request_id")
+//   professionalId String           @map("professional_id")
+//   status         PanicOfferStatus @default(SENT)
+//   sentAt         DateTime         @default(now()) @map("sent_at")
+//   respondedAt    DateTime?        @map("responded_at")
+
+//   panicRequest PanicRequest       @relation(fields: [panicRequestId], references: [id], onDelete: Cascade)
+//   professional ProfessionalProfile @relation(fields: [professionalId], references: [userId])
+
+//   @@map("panic_request_offers")
+// }
+
+// model DiaryEntry {
+//   id        String   @id @default(uuid()) @map("diary_entry_id")
+//   patientId String   @map("patient_id")
+//   feeling   String
+//   symptom   String?
+//   content   String?
+//   createdAt DateTime @default(now()) @map("created_at")
+//   updatedAt DateTime @updatedAt @map("updated_at")
+
+//   patient PatientProfile @relation(fields: [patientId], references: [userId], onDelete: Cascade)
+
+//   @@map("diary_entries")
+// }
+
+// model Notification {
+//   id        String   @id @default(uuid()) @map("notification_id")
+//   userId    String   @map("user_id")
+//   title     String
+//   content   String
+//   isRead    Boolean  @default(false) @map("is_read")
+//   createdAt DateTime @default(now()) @map("created_at")
+//   readAt    DateTime? @map("read_at")
+
+//   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+//   @@map("notifications")
+// }
