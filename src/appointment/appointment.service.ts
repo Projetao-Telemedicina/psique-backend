@@ -9,10 +9,14 @@ import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { AppointmentCanceledBy, AppointmentStatus, Prisma, Role } from '@prisma/client';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
+import { GoogleCalendarService } from '@/google-calendar/google-calendar.service';
 
 @Injectable()
 export class AppointmentService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private googleCalendar: GoogleCalendarService,
+  ) {}
 
   async create(createAppointmentDto: CreateAppointmentDto) {
     if (!createAppointmentDto.patientId) {
@@ -50,6 +54,31 @@ export class AppointmentService {
       throw new BadRequestException('O preço não pode ser negativo.');
     }
 
+    const [patient, professional] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: createAppointmentDto.patientId },
+        select: { name: true, email: true },
+      }),
+      this.prisma.user.findUnique({
+        where: { id: createAppointmentDto.professionalId },
+        select: { name: true, email: true },
+      }),
+    ]);
+
+    if (!patient || !professional) {
+      throw new NotFoundException('Paciente ou profissional não encontrado.');
+    }
+
+    const calendarEvent = await this.googleCalendar.createAppointmentEvent({
+      patientName: patient.name,
+      patientEmail: patient.email,
+      professionalName: professional.name,
+      professionalEmail: professional.email,
+      startsAt,
+      endsAt,
+      requestId: crypto.randomUUID(),
+    });
+
     return this.prisma.appointment.create({
       data: {
         professionalId: createAppointmentDto.professionalId,
@@ -57,7 +86,9 @@ export class AppointmentService {
         startsAt,
         endsAt,
         priceCents: price,
-      }
+        googleCalendarEventId: calendarEvent.eventId,
+        meetLink: calendarEvent.meetLink,
+      },
     });
   }
 
@@ -219,37 +250,47 @@ export class AppointmentService {
   }
 
   async applyReschedule(id: string, newStartsAt: Date, newEndsAt: Date) {
-  const appointment = await this.getById(id);
+    const appointment = await this.getById(id);
 
-  if (appointment.status !== AppointmentStatus.RESCHEDULE_REQUESTED) {
-    throw new BadRequestException('Esta consulta não está em processo de reagendamento.');
-  }
+    if (appointment.status !== AppointmentStatus.RESCHEDULE_REQUESTED) {
+      throw new BadRequestException('Esta consulta não está em processo de reagendamento.');
+    }
 
-  const conflictTimeReschedule = await this.prisma.appointment.findFirst({
-    where: {
-      id: { not: id },
-      professionalId: appointment.professionalId,
-      status: {
-        in: [AppointmentStatus.SCHEDULED, AppointmentStatus.RESCHEDULE_REQUESTED],
+    const conflictTimeReschedule = await this.prisma.appointment.findFirst({
+      where: {
+        id: { not: id },
+        professionalId: appointment.professionalId,
+        status: {
+          in: [AppointmentStatus.SCHEDULED, AppointmentStatus.RESCHEDULE_REQUESTED],
+        },
+        startsAt: { lt: newEndsAt },
+        endsAt: { gt: newStartsAt },
       },
-      startsAt: { lt: newEndsAt },
-      endsAt: { gt: newStartsAt },
-    },
-  });
+    });
 
-  if (conflictTimeReschedule) {
-    throw new ConflictException('O profissional já possui uma consulta neste novo horário.');
+    if (conflictTimeReschedule) {
+      throw new ConflictException('O profissional já possui uma consulta neste novo horário.');
+    }
+
+    const updated = await this.prisma.appointment.update({
+      where: { id },
+      data: {
+        startsAt: newStartsAt,
+        endsAt: newEndsAt,
+        status: AppointmentStatus.SCHEDULED,
+      },
+    });
+
+    if (updated.googleCalendarEventId) {
+      await this.googleCalendar.updateAppointmentEvent({
+        eventId: updated.googleCalendarEventId,
+        startsAt: newStartsAt,
+        endsAt: newEndsAt,
+      });
+    }
+
+    return updated;
   }
-
-  return this.prisma.appointment.update({
-    where: { id },
-    data: {
-      startsAt: newStartsAt,
-      endsAt: newEndsAt,
-      status: AppointmentStatus.SCHEDULED,
-    },
-  });
-}
 
   async cancelAppointment(id: string, cancelAppointmentDto: CancelAppointmentDto) {
     const appointment = await this.getById(id);
@@ -274,7 +315,7 @@ export class AppointmentService {
       }
     }
 
-    return this.prisma.appointment.update({
+    const updated = await this.prisma.appointment.update({
       where: { id },
       data: {
         status: AppointmentStatus.CANCELED,
@@ -283,5 +324,11 @@ export class AppointmentService {
         canceledAt: new Date(),
       },
     });
+
+    if (updated.googleCalendarEventId) {
+      await this.googleCalendar.deleteAppointmentEvent(updated.googleCalendarEventId);
+    }
+
+    return updated;
   }
 }

@@ -1,8 +1,8 @@
+import { config as loadDotenv } from 'dotenv';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { config as loadDotenv } from 'dotenv';
 
-const envPath = resolve(process.cwd(), '.env.test');
+const envPath = resolve(__dirname, '..', '.env.test');
 
 if (existsSync(envPath)) {
   process.env.DOTENV_CONFIG_PATH = envPath;

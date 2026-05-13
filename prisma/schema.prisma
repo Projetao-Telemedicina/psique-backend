@@ -355,6 +355,9 @@ model Appointment {
   createdAt                     DateTime               @default(now()) @map("created_at")
   updatedAt                     DateTime               @updatedAt @map("updated_at")
 
+  googleCalendarEventId  String?  @map("google_calendar_event_id")
+  meetLink               String?  @map("meet_link")
+
   patient      PatientProfile       @relation(fields: [patientId], references: [userId])
   professional ProfessionalProfile  @relation(fields: [professionalId], references: [userId])
 
