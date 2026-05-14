@@ -2,19 +2,29 @@ import {
   Body,
   Controller,
   Get,
+  HttpStatus,
+  MaxFileSizeValidator,
   Param,
+  ParseFilePipe,
   ParseUUIDPipe,
   Patch,
+  Post,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Role } from '@prisma/client';
 
 import { ProfessionalsService } from './professionals.service';
 import { UpdateProfessionalProfileDto } from './dto/update-professional-profile.dto';
 import {
   GetProfessionalProfileApiDocs,
+  GetProfessionalValidationRequestsApiDocs,
+  GetProfessionalValidationRequestApiDocs,
   ProfessionalsControllerApiTags,
+  SubmitProfessionalValidationApiDocs,
   UpdateProfessionalProfileApiDocs,
 } from './swagger/index';
 import { UpdateProfessionalOnlineModeApiDocs } from './swagger/professionals.update-online-mode.swagger';
@@ -27,6 +37,13 @@ type AuthenticatedRequest = {
   user: {
     id: string;
   };
+};
+
+type UploadedValidationDocument = {
+  buffer: Buffer;
+  size: number;
+  mimetype: string;
+  originalname: string;
 };
 
 @ProfessionalsControllerApiTags()
@@ -55,17 +72,6 @@ export class ProfessionalsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
-  @Patch('admin/:userId')
-  @UpdateProfessionalProfileApiDocs({ admin: true })
-  updateProfileAsAdmin(
-    @Param('userId', ParseUUIDPipe) userId: string,
-    @Body() updateProfessionalDto: UpdateProfessionalProfileDto,
-  ) {
-    return this.professionalsService.updateProfile(userId, updateProfessionalDto);
-  }
-
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.PROFESSIONAL)
   @Patch('me/online-mode')
   @UpdateProfessionalOnlineModeApiDocs()
@@ -80,14 +86,54 @@ export class ProfessionalsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
-  @Patch('admin/:userId/online-mode')
-  @UpdateProfessionalOnlineModeApiDocs({ admin: true })
-  updateOnlineModeAsAdmin(
-    @Param('userId', ParseUUIDPipe) userId: string,
-    @Body() updateDto: UpdateOnlineStatusDto,
+  @Roles(Role.PROFESSIONAL)
+  @Post('me/validation-request')
+  @UseInterceptors(
+    FileInterceptor('document', {
+      limits: {
+        fileSize: 5 * 1024 * 1024,
+        files: 1,
+      },
+    }),
+  )
+  @SubmitProfessionalValidationApiDocs()
+  submitOwnValidationRequest(
+    @UploadedFile(
+      new ParseFilePipe({
+        fileIsRequired: true,
+        errorHttpStatusCode: HttpStatus.BAD_REQUEST,
+        validators: [
+          new MaxFileSizeValidator({
+            maxSize: 5 * 1024 * 1024,
+          }),
+        ],
+      }),
+    )
+    document: UploadedValidationDocument,
+    @Req() request: AuthenticatedRequest,
   ) {
-    return this.professionalsService.updateOnlineMode(userId, updateDto.onlineMode);
+    return this.professionalsService.submitValidationRequest(
+      request.user.id,
+      document,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PROFESSIONAL)
+  @Get('me/validation-request')
+  @GetProfessionalValidationRequestApiDocs()
+  getOwnValidationRequest(@Req() request: AuthenticatedRequest) {
+    return this.professionalsService.getOwnLatestValidationRequest(
+      request.user.id,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PROFESSIONAL)
+  @Get('me/validation-requests')
+  @GetProfessionalValidationRequestsApiDocs()
+  listOwnValidationRequests(@Req() request: AuthenticatedRequest) {
+    return this.professionalsService.listOwnValidationRequests(request.user.id);
   }
 }
 
