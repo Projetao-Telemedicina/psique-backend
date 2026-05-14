@@ -281,11 +281,14 @@ model ProfessionalRequest {
 }
 
 model ProfessionalRequestDocument {
-  id           String   @id @default(uuid()) @map("document_id")
-  requestId    String   @map("request_id")
-  fileUrl      String   @map("file_url")
-  documentType String   @map("document_type")
-  uploadedAt   DateTime @default(now()) @map("uploaded_at")
+  id               String   @id @default(uuid()) @map("document_id")
+  requestId        String   @map("request_id")
+  fileName         String   @map("file_name")
+  mimeType         String   @map("mime_type")
+  sizeBytes        Int      @map("size_bytes")
+  fileData         Bytes    @map("file_data")
+  documentType     String   @map("document_type")
+  uploadedAt       DateTime @default(now()) @map("uploaded_at")
 
   request ProfessionalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
 

@@ -20,16 +20,6 @@ export const professionalProfileCreateRequestProperties = {
     maxLength: 80,
     example: 'Terapia Cognitivo-Comportamental',
   },
-  approvalStatus: {
-    type: 'string',
-    enum: professionalApprovalStatusEnumValues,
-    example: 'PENDING',
-  },
-  onlineStatus: {
-    type: 'string',
-    enum: onlineStatusEnumValues,
-    example: 'OFFLINE',
-  },
   availableForEmergency: {
     type: 'boolean',
     example: false,
@@ -54,8 +44,6 @@ export const professionalProfileCreateRequestSchema = {
 
 export const professionalProfileUpdateRequestProperties = {
   specialty: professionalProfileCreateRequestProperties.specialty,
-  approvalStatus: professionalProfileCreateRequestProperties.approvalStatus,
-  onlineStatus: professionalProfileCreateRequestProperties.onlineStatus,
   availableForEmergency:
     professionalProfileCreateRequestProperties.availableForEmergency,
   autoAbsenceMessage:
@@ -72,9 +60,37 @@ export const professionalProfileUpdateRequestSchema = {
 export const professionalOnlineModeUpdateRequestSchema = {
   type: 'object',
   properties: {
-    onlineMode: professionalProfileCreateRequestProperties.onlineStatus,
+    onlineMode: {
+      type: 'string',
+      enum: onlineStatusEnumValues,
+      example: 'OFFLINE',
+    },
   },
   required: ['onlineMode'],
+};
+
+export const professionalValidationSubmissionRequestSchema = {
+  type: 'object',
+  properties: {
+    document: {
+      type: 'string',
+      format: 'binary',
+      description: 'Arquivo do RG em PDF, JPG ou PNG com atÃ© 5 MB.',
+    },
+  },
+  required: ['document'],
+};
+
+export const professionalValidationDecisionRequestSchema = {
+  type: 'object',
+  properties: {
+    rejectionReason: {
+      type: 'string',
+      maxLength: 500,
+      example: 'Documento ilegivel. Envie uma nova copia do RG.',
+    },
+  },
+  required: ['rejectionReason'],
 };
 
 export const professionalProfileResponseProperties = {
@@ -190,5 +206,103 @@ export const professionalProfileWithUserResponseSchema = {
     'updatedAt',
     'user',
   ],
+};
+
+export const professionalValidationRequestResponseSchema = {
+  type: 'object',
+  properties: {
+    id: uuidSchema('9a6d3a2d-1f80-4186-bf3a-03bc421b54c7'),
+    professionalId: uuidSchema('1ff7c594-8447-4f93-855d-236d7369a7eb'),
+    status: {
+      type: 'string',
+      enum: ['PENDING', 'APPROVED', 'REJECTED'],
+      example: 'PENDING',
+    },
+    rejectionReason: nullableStringSchema(
+      'Documento ilegivel. Envie uma nova copia do RG.',
+    ),
+    submittedAt: dateTimeSchema('2026-05-12T14:00:00.000Z'),
+    reviewedAt: nullableStringSchema('2026-05-13T10:30:00.000Z'),
+    reviewedBy: nullableStringSchema('d91dcb4b-3323-4d39-bfa1-775cb1e85d62'),
+  },
+  required: [
+    'id',
+    'professionalId',
+    'status',
+    'rejectionReason',
+    'submittedAt',
+    'reviewedAt',
+    'reviewedBy',
+  ],
+};
+
+export const professionalValidationSubmissionResponseSchema = {
+  type: 'object',
+  properties: {
+    ...professionalValidationRequestResponseSchema.properties,
+    userStatus: {
+      type: 'string',
+      enum: userStatusEnumValues,
+      example: 'INACTIVE',
+    },
+    approvalStatus: {
+      type: 'string',
+      enum: professionalApprovalStatusEnumValues,
+      example: 'PENDING',
+    },
+  },
+  required: [
+    ...professionalValidationRequestResponseSchema.required,
+    'userStatus',
+    'approvalStatus',
+  ],
+};
+
+export const professionalValidationRequestListResponseSchema = {
+  type: 'array',
+  items: professionalValidationRequestResponseSchema,
+};
+
+export const adminProfessionalValidationRequestResponseSchema = {
+  type: 'object',
+  properties: {
+    ...professionalValidationRequestResponseSchema.properties,
+    professional: {
+      type: 'object',
+      properties: {
+        crp: {
+          type: 'string',
+          example: '123456',
+        },
+        user: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              example: 'Dra. Maria Oliveira',
+            },
+            email: {
+              type: 'string',
+              format: 'email',
+              example: 'maria.oliveira@psique.com',
+            },
+            status: {
+              type: 'string',
+              enum: userStatusEnumValues,
+              example: 'INACTIVE',
+            },
+          },
+          required: ['name', 'email', 'status'],
+        },
+      },
+      required: ['crp', 'user'],
+    },
+  },
+  required: [...professionalValidationRequestResponseSchema.required, 'professional'],
+};
+
+export const adminProfessionalValidationRequestListResponseSchema = {
+  type: 'array',
+  items: adminProfessionalValidationRequestResponseSchema,
 };
 
