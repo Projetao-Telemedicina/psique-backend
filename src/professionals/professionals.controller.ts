@@ -3,8 +3,9 @@ import {
   Controller,
   Get,
   HttpStatus,
+  MaxFileSizeValidator,
   Param,
-  ParseFilePipeBuilder,
+  ParseFilePipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -15,7 +16,6 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Role } from '@prisma/client';
-import { memoryStorage } from 'multer';
 
 import { ProfessionalsService } from './professionals.service';
 import { UpdateProfessionalProfileDto } from './dto/update-professional-profile.dto';
@@ -90,7 +90,6 @@ export class ProfessionalsController {
   @Post('me/validation-request')
   @UseInterceptors(
     FileInterceptor('document', {
-      storage: memoryStorage(),
       limits: {
         fileSize: 5 * 1024 * 1024,
         files: 1,
@@ -100,14 +99,15 @@ export class ProfessionalsController {
   @SubmitProfessionalValidationApiDocs()
   submitOwnValidationRequest(
     @UploadedFile(
-      new ParseFilePipeBuilder()
-        .addMaxSizeValidator({
-          maxSize: 5 * 1024 * 1024,
-        })
-        .build({
-          fileIsRequired: true,
-          errorHttpStatusCode: HttpStatus.BAD_REQUEST,
-        }),
+      new ParseFilePipe({
+        fileIsRequired: true,
+        errorHttpStatusCode: HttpStatus.BAD_REQUEST,
+        validators: [
+          new MaxFileSizeValidator({
+            maxSize: 5 * 1024 * 1024,
+          }),
+        ],
+      }),
     )
     document: UploadedValidationDocument,
     @Req() request: AuthenticatedRequest,
