@@ -5,7 +5,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Role, UserStatus } from '@prisma/client';
+import {
+  OnlineStatus,
+  ProfessionalApprovalStatus,
+  Role,
+  UserStatus,
+} from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -154,8 +159,8 @@ export class UsersService {
             create: {
               crp: dto.professionalProfile.crp,
               specialty: dto.professionalProfile.specialty,
-              approvalStatus: dto.professionalProfile.approvalStatus,
-              onlineStatus: dto.professionalProfile.onlineStatus,
+              approvalStatus: ProfessionalApprovalStatus.PENDING,
+              onlineStatus: OnlineStatus.OFFLINE,
               availableForEmergency: dto.professionalProfile.availableForEmergency,
               autoAbsenceMessage: dto.professionalProfile.autoAbsenceMessage,
               gapBetweenAppointmentsMinutes: dto.professionalProfile.gapBetweenAppointmentsMinutes,
