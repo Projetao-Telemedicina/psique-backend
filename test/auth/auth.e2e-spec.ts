@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { JwtService } from '@nestjs/jwt';
-import { Role } from '@prisma/client';
+import { ProfessionalApprovalStatus, Role, UserStatus } from '@prisma/client';
 import { E2eAppContext, createE2eApp, resetDatabase } from '../e2e-helpers';
 
 type AuthTokens = {
@@ -72,6 +72,27 @@ describe('AuthController (e2e)', () => {
       role: Role.PATIENT,
     });
     expect(user).not.toHaveProperty('passwordHash');
+  });
+
+  it('registers professionals as inactive and pending approval by default', async () => {
+    const { user } = await registerUser(Role.PROFESSIONAL, 'register-professional');
+
+    expect(user).toMatchObject({
+      role: Role.PROFESSIONAL,
+      professionalProfile: {
+        approvalStatus: ProfessionalApprovalStatus.PENDING,
+        onlineStatus: 'OFFLINE',
+      },
+    });
+
+    const persistedUser = await context.prisma.user.findUniqueOrThrow({
+      where: { id: user.id },
+      select: {
+        status: true,
+      },
+    });
+
+    expect(persistedUser.status).toBe(UserStatus.INACTIVE);
   });
 
   it('logs in and returns JWT access and refresh tokens with the expected payload', async () => {
