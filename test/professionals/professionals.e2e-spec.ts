@@ -138,13 +138,13 @@ describe('ProfessionalsController (e2e)', () => {
     });
   });
 
-  it('PATCH /professionals/admin/:userId lets an admin update any professional profile', async () => {
+  it('PATCH /admin/professionals/:userId lets an admin update any professional profile', async () => {
     const professional = await createProfessionalUser();
     const admin = await createAdminUser();
     const adminTokens = await login(admin.email);
 
     const response = await request(context.app.getHttpServer())
-      .patch(`/professionals/admin/${professional.id}`)
+      .patch(`/admin/professionals/${professional.id}`)
       .set('Authorization', `Bearer ${adminTokens.accessToken}`)
       .send({
         specialty: 'Psicologia Hospitalar',
@@ -159,13 +159,13 @@ describe('ProfessionalsController (e2e)', () => {
     });
   });
 
-  it('PATCH /professionals/admin/:userId forbids a professional from updating another professional profile', async () => {
+  it('PATCH /admin/professionals/:userId forbids a professional from updating another professional profile', async () => {
     const firstProfessional = await createProfessionalUser();
     const secondProfessional = await createProfessionalUser();
     const secondTokens = await login(secondProfessional.email);
 
     await request(context.app.getHttpServer())
-      .patch(`/professionals/admin/${firstProfessional.id}`)
+      .patch(`/admin/professionals/${firstProfessional.id}`)
       .set('Authorization', `Bearer ${secondTokens.accessToken}`)
       .send({
         specialty: 'Tentativa Indevida',
@@ -208,13 +208,13 @@ describe('ProfessionalsController (e2e)', () => {
     });
   });
 
-  it('PATCH /professionals/admin/:userId/online-mode lets an admin update any professional status', async () => {
+  it('PATCH /admin/professionals/:userId/online-mode lets an admin update any professional status', async () => {
     const professional = await createProfessionalUser();
     const admin = await createAdminUser();
     const adminTokens = await login(admin.email);
 
     const response = await request(context.app.getHttpServer())
-      .patch(`/professionals/admin/${professional.id}/online-mode`)
+      .patch(`/admin/professionals/${professional.id}/online-mode`)
       .set('Authorization', `Bearer ${adminTokens.accessToken}`)
       .send({ onlineMode: OnlineStatus.ONLINE })
       .expect(200);
@@ -225,13 +225,13 @@ describe('ProfessionalsController (e2e)', () => {
     });
   });
 
-  it('PATCH /professionals/admin/:userId/online-mode forbids a professional from updating another professional status', async () => {
+  it('PATCH /admin/professionals/:userId/online-mode forbids a professional from updating another professional status', async () => {
     const firstProfessional = await createProfessionalUser();
     const secondProfessional = await createProfessionalUser();
     const secondTokens = await login(secondProfessional.email);
 
     await request(context.app.getHttpServer())
-      .patch(`/professionals/admin/${firstProfessional.id}/online-mode`)
+      .patch(`/admin/professionals/${firstProfessional.id}/online-mode`)
       .set('Authorization', `Bearer ${secondTokens.accessToken}`)
       .send({ onlineMode: OnlineStatus.ONLINE })
       .expect(403);
@@ -386,7 +386,7 @@ describe('ProfessionalsController (e2e)', () => {
       .expect(403);
   });
 
-  it('GET /professionals/admin/validation-requests lets an admin filter requests by id, name and date', async () => {
+  it('GET /admin/professionals/validation-requests lets an admin filter requests by id, name and date', async () => {
     const firstProfessional = await createProfessionalUser();
     const secondProfessional = await createProfessionalUser();
     const admin = await createAdminUser();
@@ -400,7 +400,7 @@ describe('ProfessionalsController (e2e)', () => {
     await submitValidationRequest(secondTokens.accessToken).expect(201);
 
     const response = await request(context.app.getHttpServer())
-      .get('/professionals/admin/validation-requests')
+      .get('/admin/professionals/validation-requests')
       .set('Authorization', `Bearer ${adminTokens.accessToken}`)
       .query({
         requestId: firstRequest.body.id,
@@ -428,7 +428,7 @@ describe('ProfessionalsController (e2e)', () => {
     ]);
   });
 
-  it('POST /professionals/admin/validation-requests/:requestId/approve activates the professional', async () => {
+  it('PATCH /admin/professionals/validation-requests/:requestId/approve activates the professional', async () => {
     const professional = await createProfessionalUser();
     const admin = await createAdminUser();
     const professionalTokens = await login(professional.email);
@@ -438,9 +438,9 @@ describe('ProfessionalsController (e2e)', () => {
     ).expect(201);
 
     const response = await request(context.app.getHttpServer())
-      .post(`/professionals/admin/validation-requests/${validationRequest.body.id}/approve`)
+      .patch(`/admin/professionals/validation-requests/${validationRequest.body.id}/approve`)
       .set('Authorization', `Bearer ${adminTokens.accessToken}`)
-      .expect(201);
+      .expect(200);
 
     expect(response.body).toMatchObject({
       id: validationRequest.body.id,
@@ -463,7 +463,7 @@ describe('ProfessionalsController (e2e)', () => {
     );
   });
 
-  it('POST /professionals/admin/validation-requests/:requestId/reject rejects the request and keeps the professional inactive', async () => {
+  it('PATCH /admin/professionals/validation-requests/:requestId/reject rejects the request and keeps the professional inactive', async () => {
     const professional = await createProfessionalUser();
     const admin = await createAdminUser();
     const professionalTokens = await login(professional.email);
@@ -473,12 +473,12 @@ describe('ProfessionalsController (e2e)', () => {
     ).expect(201);
 
     const response = await request(context.app.getHttpServer())
-      .post(`/professionals/admin/validation-requests/${validationRequest.body.id}/reject`)
+      .patch(`/admin/professionals/validation-requests/${validationRequest.body.id}/reject`)
       .set('Authorization', `Bearer ${adminTokens.accessToken}`)
       .send({
         rejectionReason: 'Documento ilegivel',
       })
-      .expect(201);
+      .expect(200);
 
     expect(response.body).toMatchObject({
       id: validationRequest.body.id,
@@ -490,7 +490,7 @@ describe('ProfessionalsController (e2e)', () => {
     });
   });
 
-  it('POST /professionals/admin/validation-requests/:requestId/approve forbids non-admin access', async () => {
+  it('PATCH /admin/professionals/validation-requests/:requestId/approve forbids non-admin access', async () => {
     const professional = await createProfessionalUser();
     const otherProfessional = await createProfessionalUser();
     const professionalTokens = await login(professional.email);
@@ -500,7 +500,7 @@ describe('ProfessionalsController (e2e)', () => {
     ).expect(201);
 
     await request(context.app.getHttpServer())
-      .post(`/professionals/admin/validation-requests/${validationRequest.body.id}/approve`)
+      .patch(`/admin/professionals/validation-requests/${validationRequest.body.id}/approve`)
       .set('Authorization', `Bearer ${otherTokens.accessToken}`)
       .expect(403);
 
@@ -511,12 +511,12 @@ describe('ProfessionalsController (e2e)', () => {
     expect(persistedRequest.status).toBe(ProfessionalRequestStatus.PENDING);
   });
 
-  it('GET /professionals/admin/validation-requests forbids non-admin access', async () => {
+  it('GET /admin/professionals/validation-requests forbids non-admin access', async () => {
     const professional = await createProfessionalUser();
     const tokens = await login(professional.email);
 
     await request(context.app.getHttpServer())
-      .get('/professionals/admin/validation-requests')
+      .get('/admin/professionals/validation-requests')
       .set('Authorization', `Bearer ${tokens.accessToken}`)
       .expect(403);
   });

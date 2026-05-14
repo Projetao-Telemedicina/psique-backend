@@ -2,7 +2,7 @@ import { applyDecorators } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
-  ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
 import {
@@ -27,7 +27,7 @@ export function RejectProfessionalValidationApiDocs(): MethodDecorator {
       required: true,
       schema: professionalValidationDecisionRequestSchema,
     }),
-    ApiCreatedResponse({
+    ApiOkResponse({
       description: 'Solicitacao rejeitada com sucesso.',
       schema: professionalValidationSubmissionResponseSchema,
     }),

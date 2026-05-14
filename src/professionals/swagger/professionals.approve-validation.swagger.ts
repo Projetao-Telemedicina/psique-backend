@@ -1,7 +1,7 @@
 import { applyDecorators } from '@nestjs/common';
 import {
   ApiBearerAuth,
-  ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
 } from '@nestjs/swagger';
 import {
@@ -19,7 +19,7 @@ export function ApproveProfessionalValidationApiDocs(): MethodDecorator {
         'Permite que um administrador aprove uma solicitacao pendente e ative o profissional.',
     }),
     ApiUuidParam('requestId', 'ID da solicitacao de validacao.'),
-    ApiCreatedResponse({
+    ApiOkResponse({
       description: 'Solicitacao aprovada com sucesso.',
       schema: professionalValidationSubmissionResponseSchema,
     }),
