@@ -57,6 +57,25 @@ enum RescheduleRequestStatus {
   EXPIRED
 }
 
+enum DiaryFeeling {
+  HAPPY
+  SCARED
+  SAD
+  ANXIOUS
+  ANGRY
+  CALM
+  OVERWHELMED
+  HOPEFUL
+  EXHAUSTED
+}
+
+enum DiarySleepQuality {
+  EIGHT_OR_MORE
+  SIX_TO_EIGHT
+  FOUR_TO_FIVE
+  LESS_THAN_FOUR
+}
+
 // enum CalendarEventType {
 //   PERSONAL_COMMITMENT
 //   BLOCKED_TIME
@@ -228,7 +247,7 @@ model PatientProfile {
   // chatRooms      ChatRoom[]
   // wallet         Wallet?
   // panicRequests  PanicRequest[]
-  // diaryEntries   DiaryEntry[]
+  diaryEntries   DiaryEntry[]
 
   @@map("patient_profiles")
 }
@@ -679,19 +698,20 @@ model AppointmentRescheduleRequest {
 //   @@map("panic_request_offers")
 // }
 
-// model DiaryEntry {
-//   id        String   @id @default(uuid()) @map("diary_entry_id")
-//   patientId String   @map("patient_id")
-//   feeling   String
-//   symptom   String?
-//   content   String?
-//   createdAt DateTime @default(now()) @map("created_at")
-//   updatedAt DateTime @updatedAt @map("updated_at")
+model DiaryEntry {
+  id           String             @id @default(uuid()) @map("diary_entry_id")
+  patientId    String             @map("patient_id")
+  feeling      DiaryFeeling
+  sleepQuality DiarySleepQuality? @map("sleep_quality")
+  symptom      String?
+  content      String?
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
 
-//   patient PatientProfile @relation(fields: [patientId], references: [userId], onDelete: Cascade)
+  patient      PatientProfile     @relation(fields: [patientId], references: [userId], onDelete: Cascade)
 
-//   @@map("diary_entries")
-// }
+  @@map("diary_entries")
+}
 
 // model Notification {
 //   id        String   @id @default(uuid()) @map("notification_id")

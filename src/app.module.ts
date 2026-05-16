@@ -11,6 +11,7 @@ import { PrismaModule } from './prisma/index';
 import { ProfessionalsModule } from './professionals/professionals.module';
 import { RescheduleModule } from './reschedule/reschedule.module';
 import { UsersModule } from './users/users.module';
+import { DiaryModule } from './diary/diary.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { UsersModule } from './users/users.module';
     RescheduleModule,
     ScheduleModule.forRoot(),
     GoogleCalendarModule,
+    DiaryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
