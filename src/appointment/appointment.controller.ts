@@ -38,6 +38,9 @@ import {
   UpdateAppointmentStatusApiDocs,
 } from './swagger/index';
 import { GenerateCertificateApiDocs } from './swagger/generate-certificate.swagger';
+import { CreateReviewDto } from '@/review/dto/create-review.dto';
+import { ReviewService } from '@/review/review.service';
+import { CreateReviewApiDocs } from '@/review/swagger';
 
 type AuthenticatedRequest = {
   user: {
@@ -49,13 +52,28 @@ type AuthenticatedRequest = {
 @AppointmentsApiTags()
 @Controller('appointments')
 export class AppointmentController {
-  constructor(private readonly appointmentService: AppointmentService) {}
+  constructor(
+    private readonly appointmentService: AppointmentService,
+    private readonly reviewService: ReviewService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
   @CreateAppointmentApiDocs()
   create(@Body() dto: CreateAppointmentDto) {
     return this.appointmentService.create(dto);
+  }
+
+  @Post(':id/review')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PATIENT)
+  @CreateReviewApiDocs()
+  createReview(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CreateReviewDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.reviewService.create(id, request.user.id, dto);
   }
 
   @Get()
