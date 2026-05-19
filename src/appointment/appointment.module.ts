@@ -4,9 +4,10 @@ import { AppointmentController } from './appointment.controller';
 import { PrismaService } from '@/prisma';
 import { GoogleCalendarModule } from '../google-calendar/google-calendar.module';
 import { CertificateService } from './certificate/certificate.service';
+import { ReviewModule } from '@/review/review.module';
 
 @Module({
-  imports: [GoogleCalendarModule],
+  imports: [GoogleCalendarModule, ReviewModule],
   controllers: [AppointmentController],
   providers: [AppointmentService, PrismaService, CertificateService],
   exports: [AppointmentService],

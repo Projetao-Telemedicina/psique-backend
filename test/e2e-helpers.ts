@@ -49,6 +49,7 @@ export async function createE2eApp(): Promise<E2eAppContext> {
 
 export async function resetDatabase(prisma: PrismaService): Promise<void> {
   await prisma.appointmentRescheduleRequest.deleteMany();
+  await prisma.review.deleteMany();
   await prisma.appointment.deleteMany();
   await prisma.professionalRequestDocument.deleteMany();
   await prisma.professionalRequest.deleteMany();

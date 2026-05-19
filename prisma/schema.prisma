@@ -243,7 +243,7 @@ model PatientProfile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   appointments   Appointment[]
-  // reviews        Review[]
+  reviews        Review[]
   // chatRooms      ChatRoom[]
   // wallet         Wallet?
   // panicRequests  PanicRequest[]
@@ -273,7 +273,7 @@ model ProfessionalProfile {
   // breaks          ProfessionalBreak[]
   // calendarEvents  ProfessionalCalendarEvent[]
   appointments    Appointment[]
-  // reviews         Review[]
+  reviews         Review[]
   // chatRooms       ChatRoom[]
   // promotions      ProfessionalPromotion[]
   // acceptedPanics  PanicRequest[]      @relation("AcceptedProfessional")
@@ -387,7 +387,7 @@ model Appointment {
   rescheduledTo   Appointment[] @relation("AppointmentRescheduleChain")
 
   rescheduleRequests AppointmentRescheduleRequest[]
-  // review             Review?
+  review             Review?
   // chatRooms          ChatRoom[]
   // walletTransactions WalletTransaction[]
   // payments           Payment[]
@@ -414,21 +414,21 @@ model AppointmentRescheduleRequest {
   @@map("appointment_reschedule_requests")
 }
 
-// model Review {
-//   id             String   @id @default(uuid()) @map("review_id")
-//   appointmentId  String   @unique @map("appointment_id")
-//   patientId      String   @map("patient_id")
-//   professionalId String   @map("professional_id")
-//   rating         Int
-//   comment        String?
-//   createdAt      DateTime @default(now()) @map("created_at")
+model Review {
+  id             String   @id @default(uuid()) @map("review_id")
+  appointmentId  String   @unique @map("appointment_id")
+  patientId      String   @map("patient_id")
+  professionalId String   @map("professional_id")
+  rating         Int
+  comment        String?
+  createdAt      DateTime @default(now()) @map("created_at")
 
-//   appointment  Appointment         @relation(fields: [appointmentId], references: [id])
-//   patient      PatientProfile      @relation(fields: [patientId], references: [userId])
-//   professional ProfessionalProfile @relation(fields: [professionalId], references: [userId])
+  appointment  Appointment         @relation(fields: [appointmentId], references: [id])
+  patient      PatientProfile      @relation(fields: [patientId], references: [userId])
+  professional ProfessionalProfile @relation(fields: [professionalId], references: [userId])
 
-//   @@map("reviews")
-// }
+  @@map("reviews")
+}
 
 // model ChatRoom {
 //   id             String         @id @default(uuid()) @map("room_id")
