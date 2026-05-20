@@ -1,14 +1,17 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Get,
   HttpStatus,
   MaxFileSizeValidator,
   Param,
   ParseFilePipe,
+  ParseIntPipe,
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Req,
   UploadedFile,
   UseGuards,
@@ -32,6 +35,11 @@ import { UpdateOnlineStatusDto } from './dto/update-online-status.dto';
 import { RolesGuard } from '@/auth/guards/roles.guard';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { Roles } from '@/auth/decorators/roles.decorator';
+import { ReviewService } from '@/review/review.service';
+import {
+  GetOwnProfessionalReviewsApiDocs,
+  GetProfessionalReviewsApiDocs,
+} from '@/review/swagger';
 
 type AuthenticatedRequest = {
   user: {
@@ -49,7 +57,10 @@ type UploadedValidationDocument = {
 @ProfessionalsControllerApiTags()
 @Controller('professionals')
 export class ProfessionalsController {
-  constructor(private readonly professionalsService: ProfessionalsService) {}
+  constructor(
+    private readonly professionalsService: ProfessionalsService,
+    private readonly reviewService: ReviewService,
+  ) {}
 
   @Get(':userId')
   @GetProfessionalProfileApiDocs()
@@ -135,5 +146,26 @@ export class ProfessionalsController {
   listOwnValidationRequests(@Req() request: AuthenticatedRequest) {
     return this.professionalsService.listOwnValidationRequests(request.user.id);
   }
-}
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PROFESSIONAL)
+  @Get('me/reviews')
+  @GetOwnProfessionalReviewsApiDocs()
+  getOwnReviews(
+    @Req() request: AuthenticatedRequest,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+  ) {
+    return this.reviewService.getReviewsByProfessional(request.user.id, page, limit);
+  }
+
+  @Get(':userId/reviews')
+  @GetProfessionalReviewsApiDocs()
+  getReviewsByProfessional(
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+  ) {
+    return this.reviewService.getReviewsByProfessional(userId, page, limit);
+  }
+}

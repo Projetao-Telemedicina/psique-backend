@@ -57,6 +57,25 @@ enum RescheduleRequestStatus {
   EXPIRED
 }
 
+enum DiaryFeeling {
+  HAPPY
+  SCARED
+  SAD
+  ANXIOUS
+  ANGRY
+  CALM
+  OVERWHELMED
+  HOPEFUL
+  EXHAUSTED
+}
+
+enum DiarySleepQuality {
+  EIGHT_OR_MORE
+  SIX_TO_EIGHT
+  FOUR_TO_FIVE
+  LESS_THAN_FOUR
+}
+
 // enum CalendarEventType {
 //   PERSONAL_COMMITMENT
 //   BLOCKED_TIME
@@ -224,11 +243,11 @@ model PatientProfile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   appointments   Appointment[]
-  // reviews        Review[]
+  reviews        Review[]
   // chatRooms      ChatRoom[]
   // wallet         Wallet?
   // panicRequests  PanicRequest[]
-  // diaryEntries   DiaryEntry[]
+  diaryEntries   DiaryEntry[]
 
   @@map("patient_profiles")
 }
@@ -254,7 +273,7 @@ model ProfessionalProfile {
   // breaks          ProfessionalBreak[]
   // calendarEvents  ProfessionalCalendarEvent[]
   appointments    Appointment[]
-  // reviews         Review[]
+  reviews         Review[]
   // chatRooms       ChatRoom[]
   // promotions      ProfessionalPromotion[]
   // acceptedPanics  PanicRequest[]      @relation("AcceptedProfessional")
@@ -368,7 +387,7 @@ model Appointment {
   rescheduledTo   Appointment[] @relation("AppointmentRescheduleChain")
 
   rescheduleRequests AppointmentRescheduleRequest[]
-  // review             Review?
+  review             Review?
   // chatRooms          ChatRoom[]
   // walletTransactions WalletTransaction[]
   // payments           Payment[]
@@ -395,21 +414,21 @@ model AppointmentRescheduleRequest {
   @@map("appointment_reschedule_requests")
 }
 
-// model Review {
-//   id             String   @id @default(uuid()) @map("review_id")
-//   appointmentId  String   @unique @map("appointment_id")
-//   patientId      String   @map("patient_id")
-//   professionalId String   @map("professional_id")
-//   rating         Int
-//   comment        String?
-//   createdAt      DateTime @default(now()) @map("created_at")
+model Review {
+  id             String   @id @default(uuid()) @map("review_id")
+  appointmentId  String   @unique @map("appointment_id")
+  patientId      String   @map("patient_id")
+  professionalId String   @map("professional_id")
+  rating         Int
+  comment        String?
+  createdAt      DateTime @default(now()) @map("created_at")
 
-//   appointment  Appointment         @relation(fields: [appointmentId], references: [id])
-//   patient      PatientProfile      @relation(fields: [patientId], references: [userId])
-//   professional ProfessionalProfile @relation(fields: [professionalId], references: [userId])
+  appointment  Appointment         @relation(fields: [appointmentId], references: [id])
+  patient      PatientProfile      @relation(fields: [patientId], references: [userId])
+  professional ProfessionalProfile @relation(fields: [professionalId], references: [userId])
 
-//   @@map("reviews")
-// }
+  @@map("reviews")
+}
 
 // model ChatRoom {
 //   id             String         @id @default(uuid()) @map("room_id")
@@ -679,19 +698,20 @@ model AppointmentRescheduleRequest {
 //   @@map("panic_request_offers")
 // }
 
-// model DiaryEntry {
-//   id        String   @id @default(uuid()) @map("diary_entry_id")
-//   patientId String   @map("patient_id")
-//   feeling   String
-//   symptom   String?
-//   content   String?
-//   createdAt DateTime @default(now()) @map("created_at")
-//   updatedAt DateTime @updatedAt @map("updated_at")
+model DiaryEntry {
+  id           String             @id @default(uuid()) @map("diary_entry_id")
+  patientId    String             @map("patient_id")
+  feeling      DiaryFeeling
+  sleepQuality DiarySleepQuality? @map("sleep_quality")
+  symptom      String?
+  content      String?
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
 
-//   patient PatientProfile @relation(fields: [patientId], references: [userId], onDelete: Cascade)
+  patient      PatientProfile     @relation(fields: [patientId], references: [userId], onDelete: Cascade)
 
-//   @@map("diary_entries")
-// }
+  @@map("diary_entries")
+}
 
 // model Notification {
 //   id        String   @id @default(uuid()) @map("notification_id")
