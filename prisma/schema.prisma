@@ -35,20 +35,46 @@ enum ProfessionalRequestStatus {
   REJECTED
 }
 
-// enum AppointmentStatus {
-//   SCHEDULED
-//   RESCHEDULE_REQUESTED
-//   CANCELED
-//   COMPLETED
-//   NO_SHOW
-// }
+enum AppointmentStatus {
+  SCHEDULED
+  RESCHEDULE_REQUESTED
+  CANCELED
+  COMPLETED
+  NO_SHOW
+}
 
-// enum AppointmentCanceledBy {
-//   PATIENT
-//   PROFESSIONAL
-//   ADMIN
-//   SYSTEM
-// }
+enum AppointmentCanceledBy {
+  PATIENT
+  PROFESSIONAL
+  ADMIN
+  SYSTEM
+}
+
+enum RescheduleRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum DiaryFeeling {
+  HAPPY
+  SCARED
+  SAD
+  ANXIOUS
+  ANGRY
+  CALM
+  OVERWHELMED
+  HOPEFUL
+  EXHAUSTED
+}
+
+enum DiarySleepQuality {
+  EIGHT_OR_MORE
+  SIX_TO_EIGHT
+  FOUR_TO_FIVE
+  LESS_THAN_FOUR
+}
 
 // enum CalendarEventType {
 //   PERSONAL_COMMITMENT
@@ -182,7 +208,7 @@ model User {
   tokens              Token[]
 
   reviewedProfessionalRequests ProfessionalRequest[] @relation("ReviewedProfessionalRequests")
-  // requestedReschedules          AppointmentRescheduleRequest[]
+  requestedReschedules          AppointmentRescheduleRequest[]
   // sentMessages                  Message[]
   // paymentMethods                PaymentMethod[]
   // subscriptions                 Subscription[]
@@ -216,12 +242,12 @@ model PatientProfile {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // appointments   Appointment[]
-  // reviews        Review[]
+  appointments   Appointment[]
+  reviews        Review[]
   // chatRooms      ChatRoom[]
   // wallet         Wallet?
   // panicRequests  PanicRequest[]
-  // diaryEntries   DiaryEntry[]
+  diaryEntries   DiaryEntry[]
 
   @@map("patient_profiles")
 }
@@ -246,8 +272,8 @@ model ProfessionalProfile {
   // availabilities  ProfessionalAvailability[]
   // breaks          ProfessionalBreak[]
   // calendarEvents  ProfessionalCalendarEvent[]
-  // appointments    Appointment[]
-  // reviews         Review[]
+  appointments    Appointment[]
+  reviews         Review[]
   // chatRooms       ChatRoom[]
   // promotions      ProfessionalPromotion[]
   // acceptedPanics  PanicRequest[]      @relation("AcceptedProfessional")
@@ -333,72 +359,76 @@ model ProfessionalRequestDocument {
 //   @@map("professional_calendar_events")
 // }
 
-// model Appointment {
-//   id                            String                 @id @default(uuid()) @map("appointment_id")
-//   patientId                     String                 @map("patient_id")
-//   professionalId                String                 @map("professional_id")
-//   status                        AppointmentStatus      @default(SCHEDULED)
-//   startsAt                      DateTime               @map("starts_at")
-//   endsAt                        DateTime               @map("ends_at")
-//   priceCents                    Int                    @map("price_cents")
-//   confirmedAt                   DateTime?              @map("confirmed_at")
-//   canceledBy                    AppointmentCanceledBy? @map("canceled_by")
-//   cancellationReason            String?                @map("cancellation_reason")
-//   canceledAt                    DateTime?              @map("canceled_at")
-//   completedAt                   DateTime?              @map("completed_at")
-//   rescheduledFromAppointmentId  String?                @map("rescheduled_from_appointment_id")
-//   attendanceCertificateUrl      String?                @map("attendance_certificate_url")
-//   createdAt                     DateTime               @default(now()) @map("created_at")
-//   updatedAt                     DateTime               @updatedAt @map("updated_at")
+model Appointment {
+  id                            String                 @id @default(uuid()) @map("appointment_id")
+  patientId                     String                 @map("patient_id")
+  professionalId                String                 @map("professional_id")
+  status                        AppointmentStatus      @default(SCHEDULED)
+  startsAt                      DateTime               @map("starts_at")
+  endsAt                        DateTime               @map("ends_at")
+  priceCents                    Int                    @map("price_cents")
+  confirmedAt                   DateTime?              @map("confirmed_at")
+  canceledBy                    AppointmentCanceledBy? @map("canceled_by")
+  cancellationReason            String?                @map("cancellation_reason")
+  canceledAt                    DateTime?              @map("canceled_at")
+  completedAt                   DateTime?              @map("completed_at")
+  rescheduledFromAppointmentId  String?                @map("rescheduled_from_appointment_id")
+  attendanceCertificateUrl      String?                @map("attendance_certificate_url")
+  createdAt                     DateTime               @default(now()) @map("created_at")
+  updatedAt                     DateTime               @updatedAt @map("updated_at")
 
-//   patient      PatientProfile       @relation(fields: [patientId], references: [userId])
-//   professional ProfessionalProfile  @relation(fields: [professionalId], references: [userId])
+  googleCalendarEventId  String?  @map("google_calendar_event_id")
+  meetLink               String?  @map("meet_link")
 
-//   rescheduledFrom Appointment?  @relation("AppointmentRescheduleChain", fields: [rescheduledFromAppointmentId], references: [id])
-//   rescheduledTo   Appointment[] @relation("AppointmentRescheduleChain")
+  patient      PatientProfile       @relation(fields: [patientId], references: [userId])
+  professional ProfessionalProfile  @relation(fields: [professionalId], references: [userId])
 
-//   rescheduleRequests AppointmentRescheduleRequest[]
-//   review             Review?
-//   chatRooms          ChatRoom[]
-//   walletTransactions WalletTransaction[]
-//   payments           Payment[]
-//   videoCallSessions  VideoCallSession[]
+  rescheduledFrom Appointment?  @relation("AppointmentRescheduleChain", fields: [rescheduledFromAppointmentId], references: [id])
+  rescheduledTo   Appointment[] @relation("AppointmentRescheduleChain")
 
-//   @@map("appointments")
-// }
+  rescheduleRequests AppointmentRescheduleRequest[]
+  review             Review?
+  // chatRooms          ChatRoom[]
+  // walletTransactions WalletTransaction[]
+  // payments           Payment[]
+  // videoCallSessions  VideoCallSession[]
 
-// model AppointmentRescheduleRequest {
-//   id                    String   @id @default(uuid()) @map("request_id")
-//   appointmentId         String   @map("appointment_id")
-//   requestedBy           String   @map("requested_by")
-//   suggestedStartsAt     DateTime @map("suggested_starts_at")
-//   suggestedEndsAt       DateTime @map("suggested_ends_at")
-//   patientConfirmed      Boolean? @map("patient_confirmed")
-//   professionalConfirmed Boolean? @map("professional_confirmed")
-//   expiresAt             DateTime? @map("expires_at")
-//   createdAt             DateTime @default(now()) @map("created_at")
+  @@map("appointments")
+}
 
-//   appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
-//   requester   User        @relation(fields: [requestedBy], references: [id])
+model AppointmentRescheduleRequest {
+  id                    String   @id @default(uuid()) @map("request_id")
+  appointmentId         String   @map("appointment_id")
+  requestedBy           String   @map("requested_by")
+  status                RescheduleRequestStatus @default(PENDING)
+  suggestedStartsAt     DateTime @map("suggested_starts_at")
+  suggestedEndsAt       DateTime @map("suggested_ends_at")
+  patientConfirmed      Boolean? @map("patient_confirmed")
+  professionalConfirmed Boolean? @map("professional_confirmed")
+  expiresAt             DateTime? @map("expires_at")
+  createdAt             DateTime @default(now()) @map("created_at")
 
-//   @@map("appointment_reschedule_requests")
-// }
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  requester   User        @relation(fields: [requestedBy], references: [id])
 
-// model Review {
-//   id             String   @id @default(uuid()) @map("review_id")
-//   appointmentId  String   @unique @map("appointment_id")
-//   patientId      String   @map("patient_id")
-//   professionalId String   @map("professional_id")
-//   rating         Int
-//   comment        String?
-//   createdAt      DateTime @default(now()) @map("created_at")
+  @@map("appointment_reschedule_requests")
+}
 
-//   appointment  Appointment         @relation(fields: [appointmentId], references: [id])
-//   patient      PatientProfile      @relation(fields: [patientId], references: [userId])
-//   professional ProfessionalProfile @relation(fields: [professionalId], references: [userId])
+model Review {
+  id             String   @id @default(uuid()) @map("review_id")
+  appointmentId  String   @unique @map("appointment_id")
+  patientId      String   @map("patient_id")
+  professionalId String   @map("professional_id")
+  rating         Int
+  comment        String?
+  createdAt      DateTime @default(now()) @map("created_at")
 
-//   @@map("reviews")
-// }
+  appointment  Appointment         @relation(fields: [appointmentId], references: [id])
+  patient      PatientProfile      @relation(fields: [patientId], references: [userId])
+  professional ProfessionalProfile @relation(fields: [professionalId], references: [userId])
+
+  @@map("reviews")
+}
 
 // model ChatRoom {
 //   id             String         @id @default(uuid()) @map("room_id")
@@ -668,19 +698,20 @@ model ProfessionalRequestDocument {
 //   @@map("panic_request_offers")
 // }
 
-// model DiaryEntry {
-//   id        String   @id @default(uuid()) @map("diary_entry_id")
-//   patientId String   @map("patient_id")
-//   feeling   String
-//   symptom   String?
-//   content   String?
-//   createdAt DateTime @default(now()) @map("created_at")
-//   updatedAt DateTime @updatedAt @map("updated_at")
+model DiaryEntry {
+  id           String             @id @default(uuid()) @map("diary_entry_id")
+  patientId    String             @map("patient_id")
+  feeling      DiaryFeeling
+  sleepQuality DiarySleepQuality? @map("sleep_quality")
+  symptom      String?
+  content      String?
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
 
-//   patient PatientProfile @relation(fields: [patientId], references: [userId], onDelete: Cascade)
+  patient      PatientProfile     @relation(fields: [patientId], references: [userId], onDelete: Cascade)
 
-//   @@map("diary_entries")
-// }
+  @@map("diary_entries")
+}
 
 // model Notification {
 //   id        String   @id @default(uuid()) @map("notification_id")

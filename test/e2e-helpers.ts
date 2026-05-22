@@ -1,19 +1,36 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import { JwtService } from '@nestjs/jwt';
+import { Test } from '@nestjs/testing';
+import { ProfessionalApprovalStatus, Role, UserStatus } from '@prisma/client';
+import { AppModule } from '../src/app.module';
+import { GoogleCalendarService } from '../src/google-calendar/google-calendar.service';
 import { PrismaService } from '../src/prisma/prisma.service';
-import { AppModule } from './../src/app.module';
 
 export type E2eAppContext = {
   app: INestApplication;
   prisma: PrismaService;
 };
 
-export async function createE2eApp(): Promise<E2eAppContext> {
-  const moduleFixture: TestingModule = await Test.createTestingModule({
-    imports: [AppModule],
-  }).compile();
+export const mockGoogleCalendarService = {
+  createAppointmentEvent: jest.fn().mockResolvedValue({
+    eventId: 'google-event-id-123',
+    meetLink: 'https://meet.google.com/test-abc-def',
+    htmlLink: 'https://calendar.google.com/event?eid=test',
+  }),
+  updateAppointmentEvent: jest.fn().mockResolvedValue(undefined),
+  deleteAppointmentEvent: jest.fn().mockResolvedValue(undefined),
+};
 
-  const app: INestApplication = moduleFixture.createNestApplication();
+export async function createE2eApp(): Promise<E2eAppContext> {
+  const moduleFixture = await Test.createTestingModule({
+    imports: [AppModule],
+  })
+    .overrideProvider(GoogleCalendarService)
+    .useValue(mockGoogleCalendarService)
+    .compile();
+
+  const app = moduleFixture.createNestApplication();
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -26,11 +43,95 @@ export async function createE2eApp(): Promise<E2eAppContext> {
 
   return {
     app,
-    prisma: app.get<PrismaService>(PrismaService),
+    prisma: app.get(PrismaService),
   };
 }
 
 export async function resetDatabase(prisma: PrismaService): Promise<void> {
+  await prisma.appointmentRescheduleRequest.deleteMany();
+  await prisma.review.deleteMany();
+  await prisma.appointment.deleteMany();
+  await prisma.professionalRequestDocument.deleteMany();
+  await prisma.professionalRequest.deleteMany();
+  await prisma.token.deleteMany();
   await prisma.user.deleteMany();
 }
 
+let seq = 0;
+const uid = () => `${Date.now()}-${++seq}`;
+
+export async function createPatientUser(prisma: PrismaService) {
+  return prisma.user.create({
+    data: {
+      name: 'Patient Test',
+      email: `patient-${uid()}@test.com`,
+      passwordHash: 'hashed_password',
+      role: Role.PATIENT,
+      status: UserStatus.ACTIVE,
+      patientProfile: { create: {} },
+    },
+    include: { patientProfile: true },
+  });
+}
+
+export async function createProfessionalUser(prisma: PrismaService) {
+  return prisma.user.create({
+    data: {
+      name: 'Professional Test',
+      email: `professional-${uid()}@test.com`,
+      passwordHash: 'hashed_password',
+      role: Role.PROFESSIONAL,
+      status: UserStatus.ACTIVE,
+      professionalProfile: {
+        create: {
+          crp: `07-${uid()}`,
+          approvalStatus: ProfessionalApprovalStatus.APPROVED,
+        },
+      },
+    },
+    include: { professionalProfile: true },
+  });
+}
+
+export async function createAdminUser(prisma: PrismaService) {
+  return prisma.user.create({
+    data: {
+      name: 'Admin Test',
+      email: `admin-${uid()}@test.com`,
+      passwordHash: 'hashed_password',
+      role: Role.ADMIN,
+      status: UserStatus.ACTIVE,
+    },
+  });
+}
+
+export async function createAuthToken(
+  app: INestApplication,
+  prisma: PrismaService,
+  user: { id: string; role: Role },
+): Promise<string> {
+  const jwtSecret = process.env.JWT_SECRET;
+  const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET;
+
+  if (!jwtSecret || !jwtRefreshSecret) {
+    throw new Error('JWT secrets not configured for e2e tests.');
+  }
+
+  const jwtService = app.get(JwtService);
+  const jwt = jwtService.sign(
+    { sub: user.id, role: user.role },
+    { secret: jwtSecret },
+  );
+  const refreshJwt = jwtService.sign(
+    { sub: user.id },
+    { expiresIn: '7d', secret: jwtRefreshSecret },
+  );
+
+  await prisma.token.upsert({
+    where: { userId: user.id },
+    update: { jwt, refreshJwt },
+    create: { userId: user.id, jwt, refreshJwt },
+  });
+
+  return jwt;
+}
