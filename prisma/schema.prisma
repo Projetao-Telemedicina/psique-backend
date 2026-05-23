@@ -248,6 +248,7 @@ model PatientProfile {
   // wallet         Wallet?
   // panicRequests  PanicRequest[]
   diaryEntries   DiaryEntry[]
+  questionnaire  PatientQuestionnaire?
 
   @@map("patient_profiles")
 }
@@ -278,6 +279,7 @@ model ProfessionalProfile {
   // promotions      ProfessionalPromotion[]
   // acceptedPanics  PanicRequest[]      @relation("AcceptedProfessional")
   // panicOffers     PanicRequestOffer[]
+  questionnaire   ProfessionalQuestionnaire?
 
   @@map("professional_profiles")
 }
@@ -711,6 +713,47 @@ model DiaryEntry {
   patient      PatientProfile     @relation(fields: [patientId], references: [userId], onDelete: Cascade)
 
   @@map("diary_entries")
+}
+
+model PatientQuestionnaire {
+  userId             String   @id @map("user_id")
+  motivoTerapia      Int      @map("motivo_terapia")
+  abordagem          Int
+  estiloTerapeutico  Int      @map("estilo_terapeutico")
+  objetivo           Int
+  genero             Int
+  experiencia        Int
+  contextos          Int[]
+  ignoraContextos    Boolean  @default(false) @map("ignora_contextos")
+  tempoBusca         Int      @map("tempo_busca")
+  experienciaPrevia  Int      @map("experiencia_previa")
+  precisaSuporteFora Boolean  @default(false) @map("precisa_suporte_fora")
+  restricaoHorario   Boolean  @default(false) @map("restricao_horario")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  patient PatientProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("patient_questionnaires")
+}
+
+model ProfessionalQuestionnaire {
+  userId              String   @id @map("user_id")
+  motivosTerapia      Int[]    @map("motivos_terapia")
+  abordagem           Int
+  estiloTerapeutico   Int      @map("estilo_terapeutico")
+  objetivo            Int
+  genero              Int
+  experiencia         Int
+  contextos           Int[]
+  suporteFora         Int      @map("suporte_fora")
+  periodoAtendimento  Int      @map("periodo_atendimento")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  professional ProfessionalProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("professional_questionnaires")
 }
 
 // model Notification {
