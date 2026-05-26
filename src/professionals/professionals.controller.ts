@@ -40,6 +40,7 @@ import {
   GetOwnProfessionalReviewsApiDocs,
   GetProfessionalReviewsApiDocs,
 } from '@/review/swagger';
+import { GetProfessionalsByScoreAvgApiDocs } from './swagger/professionals.get-by-score-avg.swagger';
 
 type AuthenticatedRequest = {
   user: {
@@ -66,6 +67,15 @@ export class ProfessionalsController {
   @GetProfessionalProfileApiDocs()
   getProfessionalProfile(@Param('userId', ParseUUIDPipe) userId: string) {
     return this.professionalsService.getProfessionalProfile(userId);
+  }
+
+  @Get()
+  @GetProfessionalsByScoreAvgApiDocs()
+  getProfessionalsByScoreAvg(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+  ) {
+    return this.professionalsService.getProfessionalsByScoreAvg(page, limit);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

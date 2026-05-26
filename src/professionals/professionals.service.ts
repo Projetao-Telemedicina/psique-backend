@@ -70,6 +70,37 @@ export class ProfessionalsService {
     return profile;
   }
 
+  async getProfessionalsByScoreAvg(page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    const professionals = await this.prisma.professionalProfile.findMany({
+      where: {
+        approvalStatus: ProfessionalApprovalStatus.APPROVED,
+      },
+      orderBy: {
+        scoreAvg: 'desc',
+      },
+      skip,
+      take: limit,
+      select: {
+        userId: true,
+        scoreAvg: true,
+        reviewCount: true,
+        specialty: true,
+        onlineStatus: true,
+        user: {
+          select: {
+            name: true,
+            avatarUrl: true,
+            status: true,
+          },
+        },
+      },
+    });
+
+    return professionals;
+  }
+
   async updateProfile(userId: string, dto: UpdateProfessionalProfileDto) {
     const exists = await this.prisma.professionalProfile.findUnique({
       where: { userId },
