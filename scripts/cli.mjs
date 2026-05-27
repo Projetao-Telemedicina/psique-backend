@@ -260,6 +260,7 @@ async function runDevelopmentSeed() {
       value: {
         args: ['run', 'db:seed'],
         label: 'Running development seed for all entities',
+        entities: ['admins', 'patients', 'professionals'],
       },
     },
     {
@@ -267,6 +268,7 @@ async function runDevelopmentSeed() {
       value: {
         args: ['run', 'db:seed', '--', '--entities=admins'],
         label: 'Running development seed for admins',
+        entities: ['admins'],
       },
     },
     {
@@ -274,6 +276,7 @@ async function runDevelopmentSeed() {
       value: {
         args: ['run', 'db:seed', '--', '--entities=patients'],
         label: 'Running development seed for patients',
+        entities: ['patients'],
       },
     },
     {
@@ -281,6 +284,7 @@ async function runDevelopmentSeed() {
       value: {
         args: ['run', 'db:seed', '--', '--entities=professionals'],
         label: 'Running development seed for professionals',
+        entities: ['professionals'],
       },
     },
     {
@@ -288,6 +292,7 @@ async function runDevelopmentSeed() {
       value: {
         args: ['run', 'db:seed', '--', '--entities=admins,patients'],
         label: 'Running development seed for admins and patients',
+        entities: ['admins', 'patients'],
       },
     },
     {
@@ -295,6 +300,7 @@ async function runDevelopmentSeed() {
       value: {
         args: ['run', 'db:seed', '--', '--entities=admins,professionals'],
         label: 'Running development seed for admins and professionals',
+        entities: ['admins', 'professionals'],
       },
     },
     {
@@ -302,12 +308,47 @@ async function runDevelopmentSeed() {
       value: {
         args: ['run', 'db:seed', '--', '--entities=patients,professionals'],
         label: 'Running development seed for patients and professionals',
+        entities: ['patients', 'professionals'],
       },
     },
   ]);
 
   if (!selection) {
     return;
+  }
+
+  const includesQuestionnaireEntities = selection.entities.some(
+    (entity) => entity === 'patients' || entity === 'professionals',
+  );
+
+  if (includesQuestionnaireEntities) {
+    const questionnaireSelection = await askChoice('Questionnaires', [
+      {
+        label: 'Create selected users with answered questionnaires',
+        value: {
+          arg: '--questionnaires=with',
+          suffix: 'with answered questionnaires',
+        },
+      },
+      {
+        label: 'Create selected users without answered questionnaires',
+        value: {
+          arg: '--questionnaires=without',
+          suffix: 'without answered questionnaires',
+        },
+      },
+    ]);
+
+    if (!questionnaireSelection) {
+      return;
+    }
+
+    if (!selection.args.includes('--')) {
+      selection.args.push('--');
+    }
+
+    selection.args.push(questionnaireSelection.arg);
+    selection.label = `${selection.label} ${questionnaireSelection.suffix}`;
   }
 
   closeRl();
