@@ -10,6 +10,14 @@ type JwtPayload = {
   role: string;
 };
 
+type AuthenticatedSocketUser = {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  name: string;
+};
+
 @Injectable()
 export class PanicButtonWsAuthService {
   private readonly jwtSecret = getRequiredEnv('JWT_SECRET');
@@ -19,10 +27,14 @@ export class PanicButtonWsAuthService {
     private readonly prisma: PrismaService,
   ) {}
 
-  async authenticate(client: Socket) {
+  async authenticate(client: Socket): Promise<AuthenticatedSocketUser> {
+    const handshakeAuth = client.handshake.auth as { token?: unknown };
+    const authToken = handshakeAuth.token;
+    const authorizationHeader = client.handshake.headers.authorization;
     const rawToken =
-      client.handshake.auth.token ??
-      client.handshake.headers.authorization?.replace(/^Bearer\s+/i, '');
+      typeof authToken === 'string'
+        ? authToken
+        : authorizationHeader?.replace(/^Bearer\s+/i, '');
 
     if (!rawToken) {
       throw new UnauthorizedException('Token ausente no handshake do socket.');

@@ -92,7 +92,9 @@ export class PanicButtonTimeoutsService implements OnModuleInit {
 
   private deleteTimeout(key: string) {
     try {
-      const timeout = this.schedulerRegistry.getTimeout(key);
+      const timeout = this.schedulerRegistry.getTimeout(
+        key,
+      ) as ReturnType<typeof setTimeout>;
       clearTimeout(timeout);
       this.schedulerRegistry.deleteTimeout(key);
     } catch {

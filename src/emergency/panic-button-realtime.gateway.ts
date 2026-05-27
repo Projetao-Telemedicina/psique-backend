@@ -18,6 +18,17 @@ type SocketUser = {
   name: string;
 };
 
+type PanicButtonSocketData = {
+  user?: SocketUser;
+};
+
+type PanicButtonSocket = Socket<
+  Record<string, never>,
+  Record<string, never>,
+  Record<string, never>,
+  PanicButtonSocketData
+>;
+
 @WebSocketGateway({
   cors: {
     origin: true,
@@ -37,12 +48,12 @@ export class PanicButtonRealtimeGateway
     private readonly panicButtonWsAuthService: PanicButtonWsAuthService,
   ) {}
 
-  async handleConnection(@ConnectedSocket() client: Socket) {
+  async handleConnection(@ConnectedSocket() client: PanicButtonSocket) {
     try {
       const user = await this.panicButtonWsAuthService.authenticate(client);
 
-      client.data.user = user satisfies SocketUser;
-      client.join(this.getUserRoom(user.id));
+      client.data.user = user;
+      await client.join(this.getUserRoom(user.id));
       this.panicButtonPresenceService.register(user.id, client.id);
 
       this.logger.debug(`Socket conectado: user=${user.id} socket=${client.id}`);
@@ -54,8 +65,8 @@ export class PanicButtonRealtimeGateway
     }
   }
 
-  handleDisconnect(@ConnectedSocket() client: Socket) {
-    const user = client.data.user as SocketUser | undefined;
+  handleDisconnect(@ConnectedSocket() client: PanicButtonSocket) {
+    const user = client.data.user;
 
     if (!user) {
       return;

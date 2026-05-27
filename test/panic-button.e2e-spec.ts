@@ -163,7 +163,7 @@ describe('PanicButtonController (e2e)', () => {
       created.body.id,
       (request) => request.offers.length === 1,
     );
-    const offerId = initialRequest.offers[0]?.id as string;
+    const offerId = initialRequest.offers[0]?.id;
 
     const response = await request(context.app.getHttpServer())
       .post(`/panic/offers/${offerId}/accept`)
@@ -209,7 +209,7 @@ describe('PanicButtonController (e2e)', () => {
       created.body.id,
       (request) => request.offers.length === 1,
     );
-    const firstOfferId = initialRequest.offers[0]?.id as string;
+    const firstOfferId = initialRequest.offers[0]?.id;
 
     await request(context.app.getHttpServer())
       .post(`/panic/offers/${firstOfferId}/reject`)
@@ -377,7 +377,7 @@ describe('PanicButtonController (e2e)', () => {
 
   it('nao permite aceitar oferta de outro profissional', async () => {
     const { token: patientToken } = await createPatientSession();
-    const firstProfessional = await createProfessionalSession();
+    await createProfessionalSession();
     const secondProfessional = await createProfessionalSession();
 
     const created = await request(context.app.getHttpServer())
@@ -390,7 +390,7 @@ describe('PanicButtonController (e2e)', () => {
       created.body.id,
       (request) => request.offers.length === 1,
     );
-    const offerId = initialRequest.offers[0]?.id as string;
+    const offerId = initialRequest.offers[0]?.id;
 
     await request(context.app.getHttpServer())
       .post(`/panic/offers/${offerId}/accept`)
