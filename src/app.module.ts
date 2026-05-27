@@ -13,6 +13,7 @@ import { RescheduleModule } from './reschedule/reschedule.module';
 import { UsersModule } from './users/users.module';
 import { DiaryModule } from './diary/diary.module';
 import { ReviewModule } from './review/review.module';
+import { CouponsModule } from './coupons/coupons.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { ReviewModule } from './review/review.module';
     GoogleCalendarModule,
     DiaryModule,
     ReviewModule,
+    CouponsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
