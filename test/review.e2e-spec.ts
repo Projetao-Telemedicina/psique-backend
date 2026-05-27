@@ -114,6 +114,46 @@ describe('ReviewController (e2e)', () => {
       expect(Number(updatedProfessional?.scoreAvg)).toBeCloseTo(4, 5);
     });
 
+    it('deve recalcular score medio com multiplas avaliacoes', async () => {
+      const { patient, professional, patientToken } = await setupUsers();
+      const firstAppointment = await createAppointmentInDb(
+        patient.id,
+        professional.id,
+        {
+          status: AppointmentStatus.COMPLETED,
+          completedAt: new Date(),
+        },
+      );
+      const secondAppointment = await createAppointmentInDb(
+        patient.id,
+        professional.id,
+        {
+          status: AppointmentStatus.COMPLETED,
+          completedAt: new Date(),
+        },
+      );
+
+      await request(context.app.getHttpServer())
+        .post(`/appointments/${firstAppointment.id}/review`)
+        .set('Authorization', `Bearer ${patientToken}`)
+        .send({ rating: 5 })
+        .expect(201);
+
+      await request(context.app.getHttpServer())
+        .post(`/appointments/${secondAppointment.id}/review`)
+        .set('Authorization', `Bearer ${patientToken}`)
+        .send({ rating: 3 })
+        .expect(201);
+
+      const updatedProfessional = await context.prisma.professionalProfile.findUnique({
+        where: { userId: professional.id },
+        select: { scoreAvg: true, reviewCount: true },
+      });
+
+      expect(updatedProfessional?.reviewCount).toBe(2);
+      expect(Number(updatedProfessional?.scoreAvg)).toBeCloseTo(4, 5);
+    });
+
     it('deve retornar 400 quando consulta nao esta concluida', async () => {
       const { patient, professional, patientToken } = await setupUsers();
       const appointment = await createAppointmentInDb(patient.id, professional.id, {

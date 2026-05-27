@@ -1,5 +1,5 @@
 import { PrismaService } from '@/prisma';
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { AppointmentStatus, Prisma } from '@prisma/client';
 import { CreateReviewDto } from './dto/create-review.dto';
 
@@ -21,6 +21,16 @@ export class ReviewService {
       throw new ForbiddenException('O paciente informado não corresponde ao paciente da consulta');
 
     return this.prisma.$transaction(async (tx) => {
+      const existingReview = await tx.review.findUnique({
+        where: {
+          appointmentId,
+        },
+      });
+
+      if (existingReview) {
+        throw new ConflictException('Esta consulta já foi avaliada.');
+      }
+
       const review = await tx.review.create({
         data: {
           appointmentId,
@@ -31,7 +41,7 @@ export class ReviewService {
         },
       });
 
-      await this.recalculateProfessionalScore(tx, appointment.professionalId, dto.rating);
+      await this.recalculateProfessionalScore(tx, appointment.professionalId);
 
       return review;
     });
@@ -40,26 +50,27 @@ export class ReviewService {
   private async recalculateProfessionalScore(
     tx: Prisma.TransactionClient,
     professionalId: string,
-    rating: number,
   ) {
     const professional = await tx.professionalProfile.findUnique({
       where: { userId: professionalId },
-      select: { scoreAvg: true, reviewCount: true },
+      select: { userId: true },
     });
 
     if (!professional) {
       throw new NotFoundException('Perfil do profissional não encontrado');
     }
 
-    const newReviewCount = professional.reviewCount + 1;
-    const newScoreAvg =
-      (Number(professional.scoreAvg) * professional.reviewCount + rating) / newReviewCount;
+    const { _avg, _count } = await tx.review.aggregate({
+      where: { professionalId },
+      _avg: { rating: true },
+      _count: { rating: true },
+    });
 
     await tx.professionalProfile.update({
       where: { userId: professionalId },
       data: {
-        scoreAvg: newScoreAvg,
-        reviewCount: newReviewCount,
+        scoreAvg: _avg.rating ?? 0,
+        reviewCount: _count.rating,
       },
     });
   }
@@ -78,6 +89,18 @@ export class ReviewService {
       },
       skip: (page - 1) * limit,
       take: limit,
+      include: {
+        patient: {
+          select: {
+            user: {
+              select: {
+                name: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+      },
     });
   }
 }
