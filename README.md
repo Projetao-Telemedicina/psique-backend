@@ -99,12 +99,21 @@ In the CLI, choose:
 
 1. `Run seed`
 2. The desired option among all entities, only admins, only patients, only professionals, or the available combinations
+3. If the selection includes patients or professionals, choose whether those users should be created with or without answered matching questionnaires
 
 If you prefer to run it directly, the following script is also available:
 
 ```bash
 $ npm run db:seed
 ```
+
+To force questionnaire creation when running the seed directly:
+
+```bash
+$ npm run db:seed -- --entities=patients,professionals --questionnaires=with
+```
+
+If `--questionnaires` is omitted, patients and professionals are created without answered questionnaires. Running the seed again with `--questionnaires=without` also removes existing questionnaire answers for the seeded users.
 
 Before running the seed manually, make sure the development database is available and the migrations have been applied. The CLI option already handles this preparation automatically.
 

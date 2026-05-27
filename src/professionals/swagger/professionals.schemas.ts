@@ -306,3 +306,52 @@ export const adminProfessionalValidationRequestListResponseSchema = {
   items: adminProfessionalValidationRequestResponseSchema,
 };
 
+export const professionalsByScoreAvgResponseSchema = {
+  type: 'object',
+  properties: {
+    userId: {
+      type: 'string',
+      format: 'uuid',
+      example: '1ff7c594-8447-4f93-855d-236d7369a7eb',
+    },
+    scoreAvg: {
+      type: 'string',
+      example: '4.75',
+    },
+    reviewCount: {
+      type: 'integer',
+      example: 38,
+    },
+    specialty: {
+      type: 'string',
+      nullable: true,
+      example: 'Terapia Cognitivo-Comportamental',
+    },
+    onlineStatus: {
+      type: 'string',
+      enum: ['ONLINE', 'OFFLINE'],
+      example: 'ONLINE',
+    },
+    user: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          example: 'Dr. Lucas Andrade',
+        },
+        avatarUrl: {
+          type: 'string',
+          nullable: true,
+          example: 'https://cdn.psique.com/avatars/professional-01.jpg',
+        },
+        status: {
+          type: 'string',
+          enum: ['ACTIVE', 'INACTIVE', 'BLOCKED'],
+          example: 'ACTIVE',
+        },
+      },
+      required: ['name', 'status'],
+    },
+  },
+  required: ['userId', 'scoreAvg', 'reviewCount', 'onlineStatus', 'user'],
+};
