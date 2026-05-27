@@ -13,6 +13,7 @@ import { ProfessionalsModule } from './professionals/professionals.module';
 import { RescheduleModule } from './reschedule/reschedule.module';
 import { UsersModule } from './users/users.module';
 import { DiaryModule } from './diary/diary.module';
+import { MatchingModule } from './matching/matching.module';
 import { ReviewModule } from './review/review.module';
 import { PanicButtonModule } from './emergency/panic-button.module';
 
@@ -30,6 +31,7 @@ import { PanicButtonModule } from './emergency/panic-button.module';
     ScheduleModule.forRoot(),
     GoogleCalendarModule,
     DiaryModule,
+    MatchingModule,
     ReviewModule,
     PanicButtonModule,
   ],
