@@ -1,12 +1,58 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
+import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/prisma/index';
 import { MatchingService } from './matching.service';
 import { CreatePatientQuestionnaireDto } from './dto/patient-questionnaire.dto';
 import { CreateProfessionalQuestionnaireDto } from './dto/professional-questionnaire.dto';
 import { of, throwError } from 'rxjs';
 import { InternalServerErrorException } from '@nestjs/common';
+
+type PythonMatchResponse = {
+  recommendations: Array<{
+    professional_id: string;
+    score_display: number;
+    score_bruto: number;
+    cosine: number;
+    hamming: number;
+    penalidade: number;
+    mod_clinico: number;
+    explicacoes: string[];
+  }>;
+};
+
+type MockPrisma = {
+  patientQuestionnaire: {
+    upsert: jest.Mock;
+    findUnique: jest.Mock;
+  };
+  professionalQuestionnaire: {
+    upsert: jest.Mock;
+    findMany: jest.Mock;
+  };
+};
+
+type MockHttpService = {
+  post: jest.Mock;
+};
+
+type MockConfigService = {
+  get: jest.Mock;
+};
+
+function makeAxiosResponse<T>(data: T): AxiosResponse<T> {
+  return {
+    data,
+    status: 200,
+    statusText: 'OK',
+    headers: {},
+    config: {
+      headers: {},
+    } as InternalAxiosRequestConfig,
+  };
+}
 
 function makePatientRow(overrides: Partial<{
   userId: string;
@@ -60,7 +106,7 @@ function makeProfessionalRow(userId: string = 'prof-001') {
     professional: {
       userId,
       specialty: 'Psicanalise',
-      scoreAvg: { toNumber: () => 4.5, valueOf: () => 4.5, toString: () => '4.5' } as any,
+      scoreAvg: new Prisma.Decimal(4.5),
       reviewCount: 12,
       user: {
         name: 'Dr. Teste',
@@ -72,8 +118,9 @@ function makeProfessionalRow(userId: string = 'prof-001') {
 
 describe('MatchingService', () => {
   let service: MatchingService;
-  let mockPrisma: any;
-  let mockHttpService: any;
+  let mockPrisma: MockPrisma;
+  let mockHttpService: MockHttpService;
+  let mockConfigService: MockConfigService;
 
   beforeEach(async () => {
     mockPrisma = {
@@ -91,6 +138,10 @@ describe('MatchingService', () => {
       post: jest.fn(),
     };
 
+    mockConfigService = {
+      get: jest.fn(() => 'http://localhost:8000'),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         MatchingService,
@@ -98,7 +149,7 @@ describe('MatchingService', () => {
         { provide: HttpService, useValue: mockHttpService },
         {
           provide: ConfigService,
-          useValue: { get: jest.fn().mockReturnValue('http://localhost:8000') },
+          useValue: mockConfigService,
         },
       ],
     }).compile();
@@ -193,24 +244,22 @@ describe('MatchingService', () => {
       mockPrisma.patientQuestionnaire.findUnique.mockResolvedValue(patientRow);
       mockPrisma.professionalQuestionnaire.findMany.mockResolvedValue([profRow]);
 
-      const pythonResponse = {
-        data: {
-          recommendations: [
-            {
-              professional_id: 'prof-001',
-              score_display: 100.0,
-              score_bruto: 8.5,
-              cosine: 0.9,
-              hamming: 0.1,
-              penalidade: 0.0,
-              mod_clinico: 0.0,
-              explicacoes: ['Abordagem compativel: Psicanalise'],
-            },
-          ],
-        },
+      const pythonResponse: PythonMatchResponse = {
+        recommendations: [
+          {
+            professional_id: 'prof-001',
+            score_display: 100.0,
+            score_bruto: 8.5,
+            cosine: 0.9,
+            hamming: 0.1,
+            penalidade: 0.0,
+            mod_clinico: 0.0,
+            explicacoes: ['Abordagem compativel: Psicanalise'],
+          },
+        ],
       };
 
-      mockHttpService.post.mockReturnValue(of(pythonResponse));
+      mockHttpService.post.mockReturnValue(of(makeAxiosResponse(pythonResponse)));
 
       const result = await service.getRecommendationsForPatient('pat-001');
 
@@ -226,15 +275,17 @@ describe('MatchingService', () => {
         scoreBruto: 8.5,
       });
 
-      expect(mockHttpService.post).toHaveBeenCalledWith(
-        'http://localhost:8000/match',
+      const postCall = mockHttpService.post.mock.calls[0] as [
+        string,
         {
-          patient: expect.objectContaining({ motivo_terapia: 0 }),
-          professionals: [
-            expect.objectContaining({ id: 'prof-001' }),
-          ],
+          patient: Record<string, unknown>;
+          professionals: Record<string, unknown>[];
         },
-      );
+      ];
+
+      expect(postCall[0]).toBe('http://localhost:8000/match');
+      expect(postCall[1].patient).toMatchObject({ motivo_terapia: 0 });
+      expect(postCall[1].professionals[0]).toMatchObject({ id: 'prof-001' });
     });
 
     it('should map NestJS/Prisma fields to Python snake_case contract', async () => {
@@ -252,8 +303,8 @@ describe('MatchingService', () => {
       mockPrisma.professionalQuestionnaire.findMany.mockResolvedValue([profRow]);
 
       mockHttpService.post.mockReturnValue(
-        of({
-          data: {
+        of(
+          makeAxiosResponse<PythonMatchResponse>({
             recommendations: [
               {
                 professional_id: 'prof-002',
@@ -266,13 +317,19 @@ describe('MatchingService', () => {
                 explicacoes: [],
               },
             ],
-          },
-        }),
+          }),
+        ),
       );
 
       await service.getRecommendationsForPatient('pat-001');
 
-      const postCall = mockHttpService.post.mock.calls[0];
+      const postCall = mockHttpService.post.mock.calls[0] as [
+        string,
+        {
+          patient: Record<string, unknown>;
+          professionals: Record<string, unknown>[];
+        },
+      ];
       expect(postCall[1].patient).toEqual({
         motivo_terapia: 2,
         abordagem: 1,
