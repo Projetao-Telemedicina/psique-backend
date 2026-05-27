@@ -30,6 +30,14 @@ type PythonMatchResponse = {
   recommendations: PythonMatchItem[];
 };
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return 'erro desconhecido';
+}
+
 type ProfessionalHydrationData = {
   userId: string;
   user: {
@@ -203,7 +211,7 @@ export class MatchingService {
           timeout(15_000),
           catchError((error) => {
             throw new InternalServerErrorException(
-              `Servico de matching indisponivel: ${error?.message ?? 'erro desconhecido'}`,
+              `Servico de matching indisponivel: ${getErrorMessage(error)}`,
             );
           }),
         ),
