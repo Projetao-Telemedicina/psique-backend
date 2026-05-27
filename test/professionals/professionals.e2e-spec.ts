@@ -1,11 +1,11 @@
-import request from 'supertest';
 import {
-  OnlineStatus,
-  ProfessionalApprovalStatus,
-  ProfessionalRequestStatus,
-  Role,
-  UserStatus,
+    OnlineStatus,
+    ProfessionalApprovalStatus,
+    ProfessionalRequestStatus,
+    Role,
+    UserStatus,
 } from '@prisma/client';
+import request from 'supertest';
 import { E2eAppContext, createE2eApp, resetDatabase } from '../e2e-helpers';
 
 type AuthTokens = {
@@ -55,6 +55,31 @@ describe('ProfessionalsController (e2e)', () => {
       .expect(201);
 
     return response.body;
+  }
+
+  async function createApprovedProfessional(name: string, scoreAvg: number) {
+    return context.prisma.user.create({
+      data: {
+        name,
+        email: nextEmail(),
+        passwordHash: 'hashed_password',
+        role: Role.PROFESSIONAL,
+        status: UserStatus.ACTIVE,
+        professionalProfile: {
+          create: {
+            crp: nextCrp(),
+            specialty: 'Psicologia Clinica',
+            approvalStatus: ProfessionalApprovalStatus.APPROVED,
+            scoreAvg,
+            reviewCount: scoreAvg > 0 ? 1 : 0,
+            onlineStatus: OnlineStatus.OFFLINE,
+          },
+        },
+      },
+      include: {
+        professionalProfile: true,
+      },
+    });
   }
 
   async function createAdminUser() {
@@ -110,6 +135,46 @@ describe('ProfessionalsController (e2e)', () => {
         role: Role.PROFESSIONAL,
       },
     });
+  });
+
+  it('GET /professionals lists approved professionals ordered by scoreAvg', async () => {
+    const lowerScore = await createApprovedProfessional('Dra. Clara', 3.5);
+    const higherScore = await createApprovedProfessional('Dr. Hugo', 4.8);
+
+    await context.prisma.user.create({
+      data: {
+        name: 'Dra. Pending',
+        email: nextEmail(),
+        passwordHash: 'hashed_password',
+        role: Role.PROFESSIONAL,
+        status: UserStatus.ACTIVE,
+        professionalProfile: {
+          create: {
+            crp: nextCrp(),
+            specialty: 'Psicologia Clinica',
+            approvalStatus: ProfessionalApprovalStatus.PENDING,
+            scoreAvg: 5,
+            reviewCount: 1,
+            onlineStatus: OnlineStatus.OFFLINE,
+          },
+        },
+      },
+    });
+
+    const response = await request(context.app.getHttpServer())
+      .get('/professionals')
+      .query({ page: 1, limit: 10 })
+      .expect(200);
+
+    expect(response.body).toHaveLength(2);
+    expect(response.body[0]).toMatchObject({
+      userId: higherScore.id,
+    });
+    expect(response.body[1]).toMatchObject({
+      userId: lowerScore.id,
+    });
+    expect(Number(response.body[0].scoreAvg)).toBeCloseTo(4.8, 5);
+    expect(Number(response.body[1].scoreAvg)).toBeCloseTo(3.5, 5);
   });
 
   it('PATCH /professionals/me lets a professional update their own profile', async () => {
