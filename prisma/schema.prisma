@@ -29,6 +29,22 @@ enum OnlineStatus {
   ONLINE
 }
 
+enum EmergencyRequestStatus {
+  SEARCHING
+  OFFER_PENDING
+  MATCHED
+  EXPIRED
+  CANCELLED
+}
+
+enum EmergencyOfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
+
 enum ProfessionalRequestStatus {
   PENDING
   APPROVED
@@ -249,10 +265,12 @@ model PatientProfile {
 
   appointments   Appointment[]
   reviews        Review[]
+  emergencyRequests EmergencyRequest[]
   // chatRooms      ChatRoom[]
   // wallet         Wallet?
   // panicRequests  PanicRequest[]
   diaryEntries   DiaryEntry[]
+  questionnaire  PatientQuestionnaire?
 
   @@map("patient_profiles")
 }
@@ -264,6 +282,7 @@ model ProfessionalProfile {
   approvalStatus                ProfessionalApprovalStatus @default(PENDING) @map("approval_status")
   onlineStatus                  OnlineStatus               @default(OFFLINE) @map("online_status")
   availableForEmergency         Boolean                    @default(false) @map("available_for_emergency")
+  activeEmergencyOfferId        String?                    @unique @map("active_emergency_offer_id")
   autoAbsenceMessage            String?                    @map("auto_absence_message")
   gapBetweenAppointmentsMinutes Int                        @default(0) @map("gap_between_appointments_minutes")
   scoreAvg                      Decimal                    @default(0) @db.Decimal(4, 2) @map("score_avg")
@@ -279,10 +298,13 @@ model ProfessionalProfile {
   // calendarEvents  ProfessionalCalendarEvent[]
   appointments    Appointment[]
   reviews         Review[]
+  acceptedEmergencyRequests EmergencyRequest[] @relation("EmergencyMatchedProfessional")
+  emergencyOffers EmergencyOffer[]
   // chatRooms       ChatRoom[]
   // promotions      ProfessionalPromotion[]
   // acceptedPanics  PanicRequest[]      @relation("AcceptedProfessional")
   // panicOffers     PanicRequestOffer[]
+  questionnaire   ProfessionalQuestionnaire?
 
   @@map("professional_profiles")
 }
@@ -433,6 +455,51 @@ model Review {
   professional ProfessionalProfile @relation(fields: [professionalId], references: [userId])
 
   @@map("reviews")
+}
+
+model EmergencyRequest {
+  id                    String                 @id @default(uuid()) @map("emergency_request_id")
+  patientId             String                 @map("patient_id")
+  status                EmergencyRequestStatus @default(SEARCHING)
+  matchedProfessionalId String?                @map("matched_professional_id")
+  notes                 String?
+  expiresAt             DateTime               @map("expires_at")
+  matchedAt             DateTime?              @map("matched_at")
+  cancelledAt           DateTime?              @map("cancelled_at")
+  closedAt              DateTime?              @map("closed_at")
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+
+  patient             PatientProfile       @relation(fields: [patientId], references: [userId], onDelete: Cascade)
+  matchedProfessional ProfessionalProfile? @relation("EmergencyMatchedProfessional", fields: [matchedProfessionalId], references: [userId])
+  offers              EmergencyOffer[]
+
+  @@index([patientId, status])
+  @@index([status, createdAt])
+  @@map("emergency_requests")
+}
+
+model EmergencyOffer {
+  id                 String               @id @default(uuid()) @map("emergency_offer_id")
+  emergencyRequestId String               @map("emergency_request_id")
+  professionalId     String               @map("professional_id")
+  status             EmergencyOfferStatus @default(PENDING)
+  attemptNumber      Int                  @map("attempt_number")
+  sentAt             DateTime             @default(now()) @map("sent_at")
+  expiresAt          DateTime             @map("expires_at")
+  respondedAt        DateTime?            @map("responded_at")
+  rejectionReason    String?              @map("rejection_reason")
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+
+  emergencyRequest EmergencyRequest    @relation(fields: [emergencyRequestId], references: [id], onDelete: Cascade)
+  professional     ProfessionalProfile @relation(fields: [professionalId], references: [userId])
+
+  @@unique([emergencyRequestId, professionalId])
+  @@index([emergencyRequestId, status])
+  @@index([professionalId, status])
+  @@index([status, expiresAt])
+  @@map("emergency_offers")
 }
 
 // model ChatRoom {
@@ -724,6 +791,47 @@ model DiaryEntry {
   patient      PatientProfile     @relation(fields: [patientId], references: [userId], onDelete: Cascade)
 
   @@map("diary_entries")
+}
+
+model PatientQuestionnaire {
+  userId             String   @id @map("user_id")
+  motivoTerapia      Int      @map("motivo_terapia")
+  abordagem          Int
+  estiloTerapeutico  Int      @map("estilo_terapeutico")
+  objetivo           Int
+  genero             Int
+  experiencia        Int
+  contextos          Int[]
+  ignoraContextos    Boolean  @default(false) @map("ignora_contextos")
+  tempoBusca         Int      @map("tempo_busca")
+  experienciaPrevia  Int      @map("experiencia_previa")
+  precisaSuporteFora Boolean  @default(false) @map("precisa_suporte_fora")
+  restricaoHorario   Boolean  @default(false) @map("restricao_horario")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  patient PatientProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("patient_questionnaires")
+}
+
+model ProfessionalQuestionnaire {
+  userId              String   @id @map("user_id")
+  motivosTerapia      Int[]    @map("motivos_terapia")
+  abordagem           Int
+  estiloTerapeutico   Int      @map("estilo_terapeutico")
+  objetivo            Int
+  genero              Int
+  experiencia         Int
+  contextos           Int[]
+  suporteFora         Int      @map("suporte_fora")
+  periodoAtendimento  Int      @map("periodo_atendimento")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  professional ProfessionalProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("professional_questionnaires")
 }
 
 // model Notification {

@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { UpdateProfessionalProfileDto } from './dto/update-professional-profile.dto';
 import { PrismaService } from '@/prisma/index';
 import {
@@ -17,6 +18,7 @@ import { extname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { RejectProfessionalValidationDto } from './dto/reject-professional-validation.dto';
 import { ListProfessionalValidationRequestsDto } from './dto/list-professional-validation-requests.dto';
+import { EMERGENCY_EVENTS } from '@/emergency/constants/panic-button.constants';
 
 type StoredValidationFile = {
   fileName: string;
@@ -36,7 +38,10 @@ type UploadedValidationDocument = {
 export class ProfessionalsService {
   private readonly maxValidationDocumentSizeBytes = 5 * 1024 * 1024;
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   async getProfessionalProfile(userId: string) {
     const profile = await this.prisma.professionalProfile.findUnique({
@@ -70,36 +75,103 @@ export class ProfessionalsService {
     return profile;
   }
 
+  async getProfessionalsByScoreAvg(page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    const professionals = await this.prisma.professionalProfile.findMany({
+      where: {
+        approvalStatus: ProfessionalApprovalStatus.APPROVED,
+      },
+      orderBy: {
+        scoreAvg: 'desc',
+      },
+      skip,
+      take: limit,
+      select: {
+        userId: true,
+        scoreAvg: true,
+        reviewCount: true,
+        specialty: true,
+        onlineStatus: true,
+        user: {
+          select: {
+            name: true,
+            avatarUrl: true,
+            status: true,
+          },
+        },
+      },
+    });
+
+    return professionals;
+  }
+
   async updateProfile(userId: string, dto: UpdateProfessionalProfileDto) {
     const exists = await this.prisma.professionalProfile.findUnique({
       where: { userId },
+      include: {
+        user: {
+          select: {
+            status: true,
+          },
+        },
+      },
     });
 
     if (!exists) {
       throw new NotFoundException('Perfil do profissional não encontrado');
     }
 
-    return this.prisma.professionalProfile.update({
+    const updatedProfile = await this.prisma.professionalProfile.update({
       where: { userId },
       data: dto,
     });
+
+    this.emitPsychologistAvailableIfEligible({
+      userId,
+      onlineStatus: updatedProfile.onlineStatus,
+      availableForEmergency: updatedProfile.availableForEmergency,
+      approvalStatus: updatedProfile.approvalStatus,
+      userStatus: exists.user.status,
+      activeEmergencyOfferId: updatedProfile.activeEmergencyOfferId,
+    });
+
+    return updatedProfile;
   }
 
   async updateOnlineMode(userId: string, onlineMode: OnlineStatus) {
     const exists = await this.prisma.professionalProfile.findUnique({
       where: { userId },
+      include: {
+        user: {
+          select: {
+            status: true,
+          },
+        },
+      },
     });
 
     if (!exists) {
       throw new NotFoundException('Perfil do profissional não encontrado');
     }
 
-    return this.prisma.professionalProfile.update({
+    const updatedProfile = await this.prisma.professionalProfile.update({
       where: { userId },
       data: {
         onlineStatus: onlineMode,
       },
     });
+
+    this.emitPsychologistAvailableIfEligible({
+      userId,
+      onlineStatus: updatedProfile.onlineStatus,
+      availableForEmergency: updatedProfile.availableForEmergency,
+      approvalStatus: updatedProfile.approvalStatus,
+      userStatus: exists.user.status,
+      activeEmergencyOfferId: updatedProfile.activeEmergencyOfferId,
+    });
+
+    return updatedProfile;
   }
 
   async submitValidationRequest(
@@ -509,5 +581,30 @@ export class ProfessionalsService {
       throw new BadRequestException('Assinatura do arquivo invalida para o documento enviado');
     }
     return expectedDocument;
+  }
+
+  private emitPsychologistAvailableIfEligible(input: {
+    userId: string;
+    onlineStatus: OnlineStatus;
+    availableForEmergency: boolean;
+    approvalStatus: ProfessionalApprovalStatus;
+    userStatus: UserStatus;
+    activeEmergencyOfferId: string | null;
+  }) {
+    const isEligible =
+      input.onlineStatus === OnlineStatus.ONLINE &&
+      input.availableForEmergency &&
+      input.approvalStatus === ProfessionalApprovalStatus.APPROVED &&
+      input.userStatus === UserStatus.ACTIVE &&
+      !input.activeEmergencyOfferId;
+
+    if (!isEligible) {
+      return;
+    }
+
+    void this.eventEmitter.emitAsync(EMERGENCY_EVENTS.PSYCHOLOGIST_AVAILABLE, {
+      professionalId: input.userId,
+      occurredAt: new Date(),
+    });
   }
 }
