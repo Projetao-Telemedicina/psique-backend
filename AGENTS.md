@@ -1,6 +1,6 @@
-## Agent skills
+# Agent skills
 
-### Issue tracker
+## Issue tracker
 
 GitHub Issues via `gh` CLI. See `docs/agents/issue-tracker.md`.
 
