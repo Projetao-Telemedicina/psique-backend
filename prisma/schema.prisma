@@ -583,6 +583,7 @@ model UserCoupon {
   claimedAt  DateTime  @default(now()) @map("claimed_at")
   usedAt     DateTime? @map("used_at")
   isUsed     Boolean   @default(false) @map("is_used")
+  reservedAt DateTime? @map("reserved_at")
 
   coupon   Coupon    @relation(fields: [couponId], references: [id])
   user     User      @relation(fields: [userId], references: [id])
