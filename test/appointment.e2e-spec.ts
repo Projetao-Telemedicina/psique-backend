@@ -211,6 +211,24 @@ describe('AppointmentController (e2e)', () => {
         .expect(409);
     });
 
+    it('deve retornar 409 quando paciente já tem consulta no mesmo horário com outro profissional', async () => {
+      const { patient, professional, patientToken } = await setupUsers();
+      const otherProfessional = await createProfessionalUser(context.prisma);
+
+      await createAppointmentInDb(patient.id, professional.id);
+
+      await request(context.app.getHttpServer())
+        .post('/appointments')
+        .set('Authorization', `Bearer ${patientToken}`)
+        .send({
+          professionalId: otherProfessional.id,
+          patientId: patient.id,
+          startsAt: futureDate(48),
+          endsAt: futureDate(49),
+        })
+        .expect(409);
+    });
+
     it('deve retornar 409 quando nova consulta se sobrepõe parcialmente', async () => {
       const { patient, professional, patientToken } = await setupUsers();
 

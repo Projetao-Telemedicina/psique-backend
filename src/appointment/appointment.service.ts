@@ -34,6 +34,24 @@ export class AppointmentService {
       throw new BadRequestException('A data de término deve ser posterior à data de início.');
     }
 
+    const patientHaveAppointment = await this.prisma.appointment.findFirst({
+      where: {
+          patientId: createAppointmentDto.patientId,
+        status: {
+          in: [
+            AppointmentStatus.SCHEDULED,
+            AppointmentStatus.RESCHEDULE_REQUESTED
+          ],
+        },
+        startsAt: { lt: endsAt },
+        endsAt: { gt: startsAt },
+      },
+    });
+
+    if (patientHaveAppointment) {
+      throw new ConflictException('O paciente já possui uma consulta marcada no mesmo horário ou está reagendando uma consulta nesse horário.');
+    }
+
     const conflictAppointment = await this.prisma.appointment.findFirst({
       where: {
         professionalId: createAppointmentDto.professionalId,
