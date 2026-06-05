@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   DefaultValuePipe,
+  Delete,
   Get,
   HttpStatus,
   MaxFileSizeValidator,
@@ -41,6 +42,9 @@ import {
   GetProfessionalReviewsApiDocs,
 } from '@/review/swagger';
 import { GetProfessionalsByScoreAvgApiDocs } from './swagger/professionals.get-by-score-avg.swagger';
+import { AvailabilitiesService } from './availabilities/availabilities.service';
+import { CreateAvailabilityDto } from './availabilities/dto/create-availability.dto';
+import { UpdateAvailabilityDto } from './availabilities/dto/update-availability.dto';
 
 type AuthenticatedRequest = {
   user: {
@@ -61,6 +65,7 @@ export class ProfessionalsController {
   constructor(
     private readonly professionalsService: ProfessionalsService,
     private readonly reviewService: ReviewService,
+    private readonly availabilitiesService: AvailabilitiesService,
   ) {}
 
   @Get(':userId')
@@ -177,5 +182,56 @@ export class ProfessionalsController {
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
   ) {
     return this.reviewService.getReviewsByProfessional(userId, page, limit);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PROFESSIONAL)
+  @Post('me/availabilities')
+  createAvailability(
+    @Body() dto: CreateAvailabilityDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.availabilitiesService.create(request.user.id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PROFESSIONAL)
+  @Get('me/availabilities')
+  findOwnAvailabilities(@Req() request: AuthenticatedRequest) {
+    return this.availabilitiesService.findAllOwn(request.user.id);
+  }
+
+  @Get(':userId/availabilities')
+  findAvailabilitiesByProfessional(@Param('userId', ParseUUIDPipe) userId: string) {
+    return this.availabilitiesService.findByProfessional(userId);
+  }
+
+  @Get(':userId/available-slots')
+  getAvailableSlots(
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Query('date') date: string,
+  ) {
+    return this.availabilitiesService.getAvailableSlots(userId, date);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PROFESSIONAL)
+  @Patch('me/availabilities/:id')
+  updateAvailability(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateAvailabilityDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.availabilitiesService.update(request.user.id, id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.PROFESSIONAL)
+  @Delete('me/availabilities/:id')
+  removeAvailability(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.availabilitiesService.remove(request.user.id, id);
   }
 }
