@@ -126,18 +126,73 @@ export class AppointmentService {
   }
 
   async getById(id: string) {
-    const existsAppointment = await this.prisma.appointment.findUnique({
+    const appointment = await this.prisma.appointment.findUnique({
       where: { id },
+      include: {
+        patient: {
+          select: {
+            user: { select: { name: true, avatarUrl: true } },
+          },
+        },
+        professional: {
+          select: {
+            specialty: true,
+            crp: true,
+            user: { select: { name: true, avatarUrl: true } },
+          },
+        },
+      },
     });
 
-    if (!existsAppointment) {
+    if (!appointment) {
       throw new NotFoundException('Consulta não encontrada.');
     }
 
-    return existsAppointment;
+    return appointment;
   }
 
-  async getUpcomingAppointments(userId: string, userRole: Role) {
+  async getAppointmentsByDate(userId: string, userRole: Role, date: string) {
+    const targetDate = new Date(date);
+
+    if (isNaN(targetDate.getTime())) {
+      throw new BadRequestException('Data inválida. Use o formato YYYY-MM-DD');
+    }
+
+    const dayStart = new Date(targetDate);
+    dayStart.setUTCHours(0, 0, 0, 0);
+
+    const dayEnd = new Date(targetDate);
+    dayEnd.setUTCHours(23, 59, 59, 999);
+
+    const isPatient = userRole === Role.PATIENT;
+
+    return this.prisma.appointment.findMany({
+      where: {
+        ...(isPatient ? { patientId: userId } : { professionalId: userId }),
+        startsAt: { gte: dayStart },
+        endsAt: { lte: dayEnd },
+        status: {
+          in: [AppointmentStatus.SCHEDULED, AppointmentStatus.RESCHEDULE_REQUESTED],
+        },
+      },
+      orderBy: { startsAt: 'asc' },
+      include: {
+        patient: {
+          select: {
+            user: { select: { name: true, avatarUrl: true } },
+          },
+        },
+        professional: {
+          select: {
+            specialty: true,
+            user: { select: { name: true, avatarUrl: true } },
+          },
+        },
+      },
+    });
+  }
+
+  async getUpcomingAppointments(userId: string, userRole: Role, page: number, limit: number) {
     const isPatient = userRole === Role.PATIENT;
 
     return this.prisma.appointment.findMany({
@@ -148,23 +203,20 @@ export class AppointmentService {
           in: [AppointmentStatus.SCHEDULED, AppointmentStatus.RESCHEDULE_REQUESTED],
         },
       },
-      orderBy: {
-        startsAt: 'asc',
-      },
-      include: isPatient
-        ? {
-            professional: {
-              select: {
-                specialty: true,
-                user: { select: { name: true, avatarUrl: true } },
-              },
-            },
-          }
-        : {
-            patient: {
-              select: { user: { select: { name: true, avatarUrl: true } } },
-            },
+      orderBy: { startsAt: 'asc' },
+      skip: (page - 1) * limit,
+      take: limit,
+      include: {
+        patient: {
+          select: { user: { select: { name: true, avatarUrl: true } } },
+        },
+        professional: {
+          select: {
+            specialty: true,
+            user: { select: { name: true, avatarUrl: true } },
           },
+        },
+      },
     });
   }
 
@@ -431,7 +483,6 @@ export class AppointmentService {
       throw new NotFoundException('Consulta não encontrada.');
     }
 
-    // Apenas participantes podem baixar o certificado
     const isParticipant =
       appointment.patientId === userId ||
       appointment.professionalId === userId;

@@ -77,6 +77,8 @@ const appointmentBaseProperties = {
   attendanceCertificateUrl: nullableStringSchema(
     'https://cdn.psique.com/certificates/cert-01.pdf',
   ),
+  meetLink: nullableStringSchema('https://meet.google.com/abc-defg-hij'),
+  googleCalendarEventId: nullableStringSchema('google-event-id-123'),
   createdAt: dateTimeSchema('2026-05-05T12:00:00.000Z'),
   updatedAt: dateTimeSchema('2026-05-05T12:30:00.000Z'),
 };
@@ -199,4 +201,61 @@ export const cancelAppointmentRequestSchema = {
     },
   },
   required: ['canceledBy'],
+};
+
+// ─── getById detail schemas (com patient e professional aninhados) ───
+
+const detailedPatientSchema = {
+  type: 'object',
+  properties: {
+    user: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          example: 'Maria Oliveira',
+        },
+        avatarUrl: nullableStringSchema(
+          'https://cdn.psique.com/avatars/user-01.jpg',
+        ),
+      },
+      required: ['name'],
+    },
+  },
+  required: ['user'],
+};
+
+const detailedProfessionalSchema = {
+  type: 'object',
+  properties: {
+    specialty: nullableStringSchema('Psicologia Clínica'),
+    crp: {
+      type: 'string',
+      example: '06/123456',
+    },
+    user: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          example: 'Dr. Lucas Andrade',
+        },
+        avatarUrl: nullableStringSchema(
+          'https://cdn.psique.com/avatars/professional-01.jpg',
+        ),
+      },
+      required: ['name'],
+    },
+  },
+  required: ['crp', 'user'],
+};
+
+export const appointmentDetailResponseSchema = {
+  type: 'object',
+  properties: {
+    ...appointmentBaseProperties,
+    patient: detailedPatientSchema,
+    professional: detailedProfessionalSchema,
+  },
+  required: [...appointmentRequiredFields, 'patient', 'professional'],
 };
