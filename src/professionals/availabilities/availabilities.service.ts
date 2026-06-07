@@ -60,6 +60,15 @@ export class AvailabilitiesService {
 
     await this.checkOverlap(professionalId, slot.weekday, newStartTime, newEndTime, availabilityId);
 
+    if (dto.startTime || dto.endTime) {
+      await this.checkAppointmentConflict(
+        professionalId,
+        slot.weekday,
+        newStartTime,
+        newEndTime,
+      );
+    }
+
     return this.prisma.professionalAvailability.update({
       where: { id: availabilityId },
       data: {

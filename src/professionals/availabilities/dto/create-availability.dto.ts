@@ -32,5 +32,5 @@ export class CreateAvailabilityDto {
     @Min(30)
     @Max(120)
     @IsOptional()
-    slotDurationMinutes?: number;
+    slotDurationMinutes?: number = 60;
 }

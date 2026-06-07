@@ -42,6 +42,14 @@ import {
   GetProfessionalReviewsApiDocs,
 } from '@/review/swagger';
 import { GetProfessionalsByScoreAvgApiDocs } from './swagger/professionals.get-by-score-avg.swagger';
+import {
+  CreateAvailabilityApiDocs,
+  FindOwnAvailabilitiesApiDocs,
+  FindAvailabilitiesByProfessionalApiDocs,
+  GetAvailableSlotsApiDocs,
+  UpdateAvailabilityApiDocs,
+  RemoveAvailabilityApiDocs,
+} from './availabilities/swagger';
 import { AvailabilitiesService } from './availabilities/availabilities.service';
 import { CreateAvailabilityDto } from './availabilities/dto/create-availability.dto';
 import { UpdateAvailabilityDto } from './availabilities/dto/update-availability.dto';
@@ -187,6 +195,7 @@ export class ProfessionalsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.PROFESSIONAL)
   @Post('me/availabilities')
+  @CreateAvailabilityApiDocs()
   createAvailability(
     @Body() dto: CreateAvailabilityDto,
     @Req() request: AuthenticatedRequest,
@@ -197,16 +206,19 @@ export class ProfessionalsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.PROFESSIONAL)
   @Get('me/availabilities')
+  @FindOwnAvailabilitiesApiDocs()
   findOwnAvailabilities(@Req() request: AuthenticatedRequest) {
     return this.availabilitiesService.findAllOwn(request.user.id);
   }
 
   @Get(':userId/availabilities')
+  @FindAvailabilitiesByProfessionalApiDocs()
   findAvailabilitiesByProfessional(@Param('userId', ParseUUIDPipe) userId: string) {
     return this.availabilitiesService.findByProfessional(userId);
   }
 
   @Get(':userId/available-slots')
+  @GetAvailableSlotsApiDocs()
   getAvailableSlots(
     @Param('userId', ParseUUIDPipe) userId: string,
     @Query('date') date: string,
@@ -217,6 +229,7 @@ export class ProfessionalsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.PROFESSIONAL)
   @Patch('me/availabilities/:id')
+  @UpdateAvailabilityApiDocs()
   updateAvailability(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateAvailabilityDto,
@@ -228,6 +241,7 @@ export class ProfessionalsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.PROFESSIONAL)
   @Delete('me/availabilities/:id')
+  @RemoveAvailabilityApiDocs()
   removeAvailability(
     @Param('id', ParseUUIDPipe) id: string,
     @Req() request: AuthenticatedRequest,
