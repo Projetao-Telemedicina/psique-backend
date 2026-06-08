@@ -381,6 +381,7 @@ model ProfessionalRequestDocument {
 
 model Appointment {
   id                            String                 @id @default(uuid()) @map("appointment_id")
+  emergencyRequestId            String?                @unique @map("emergency_request_id")
   patientId                     String                 @map("patient_id")
   professionalId                String                 @map("professional_id")
   status                        AppointmentStatus      @default(SCHEDULED)
@@ -400,6 +401,7 @@ model Appointment {
   googleCalendarEventId  String?  @map("google_calendar_event_id")
   meetLink               String?  @map("meet_link")
 
+  emergencyRequest EmergencyRequest? @relation(fields: [emergencyRequestId], references: [id], onDelete: SetNull)
   patient      PatientProfile       @relation(fields: [patientId], references: [userId])
   professional ProfessionalProfile  @relation(fields: [professionalId], references: [userId])
 
@@ -465,6 +467,7 @@ model EmergencyRequest {
 
   patient             PatientProfile       @relation(fields: [patientId], references: [userId], onDelete: Cascade)
   matchedProfessional ProfessionalProfile? @relation("EmergencyMatchedProfessional", fields: [matchedProfessionalId], references: [userId])
+  appointment         Appointment?
   offers              EmergencyOffer[]
 
   @@index([patientId, status])
