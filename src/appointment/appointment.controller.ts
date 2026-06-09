@@ -30,6 +30,7 @@ import {
   CreateAppointmentApiDocs,
   GetAllAppointmentsApiDocs,
   GetAppointmentByIdApiDocs,
+  GetAppointmentsByDateApiDocs,
   GetAppointmentHistoryApiDocs,
   GetUpcomingAppointmentsApiDocs,
   MarkAppointmentAsCompletedApiDocs,
@@ -87,10 +88,16 @@ export class AppointmentController {
   @Get('me/upcoming')
   @UseGuards(JwtAuthGuard)
   @GetUpcomingAppointmentsApiDocs()
-  getUpcoming(@Req() request: AuthenticatedRequest) {
+  getUpcoming(
+    @Req() request: AuthenticatedRequest,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number
+  ) {
     return this.appointmentService.getUpcomingAppointments(
       request.user.id,
       request.user.role,
+      page,
+      limit
     );
   }
 
@@ -107,6 +114,20 @@ export class AppointmentController {
       request.user.role,
       page,
       limit,
+    );
+  }
+
+  @Get('me/date')
+  @UseGuards(JwtAuthGuard)
+  @GetAppointmentsByDateApiDocs()
+  getByDate(
+    @Req() request: AuthenticatedRequest,
+    @Query('date') date: string,
+  ) {
+    return this.appointmentService.getAppointmentsByDate(
+      request.user.id,
+      request.user.role,
+      date,
     );
   }
 
