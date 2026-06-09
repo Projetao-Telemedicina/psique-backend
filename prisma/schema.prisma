@@ -92,6 +92,12 @@ enum DiarySleepQuality {
   LESS_THAN_FOUR
 }
 
+enum RecurrenceType {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
 // enum CalendarEventType {
 //   PERSONAL_COMMITMENT
 //   BLOCKED_TIME
@@ -293,7 +299,7 @@ model ProfessionalProfile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   requests        ProfessionalRequest[]
-  // availabilities  ProfessionalAvailability[]
+  availabilities  ProfessionalAvailability[]
   // breaks          ProfessionalBreak[]
   // calendarEvents  ProfessionalCalendarEvent[]
   appointments    Appointment[]
@@ -341,19 +347,24 @@ model ProfessionalRequestDocument {
   @@map("professional_request_documents")
 }
 
-// model ProfessionalAvailability {
-//   id                  String  @id @default(uuid()) @map("availability_id")
-//   professionalId      String  @map("professional_id")
-//   weekday             Int
-//   startTime           String  @map("start_time")
-//   endTime             String  @map("end_time")
-//   slotDurationMinutes Int     @default(50) @map("slot_duration_minutes")
-//   isActive            Boolean @default(true) @map("is_active")
+model ProfessionalAvailability {
+  id                  String         @id @default(uuid()) @map("availability_id")
+  professionalId      String         @map("professional_id")
+  weekday             Int            // 0 = domingo ... 6 = sábado
+  startTime           String         @map("start_time")  // "HH:MM"
+  endTime             String         @map("end_time")    // "HH:MM"
+  slotDurationMinutes Int            @default(50) @map("slot_duration_minutes")
+  recurrence          RecurrenceType @default(WEEKLY)
+  isActive            Boolean        @default(true) @map("is_active")
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
 
-//   professional ProfessionalProfile @relation(fields: [professionalId], references: [userId], onDelete: Cascade)
+  professional ProfessionalProfile @relation(fields: [professionalId], references: [userId], onDelete: Cascade)
 
-//   @@map("professional_availability")
-// }
+  @@unique([professionalId, weekday, startTime, recurrence])
+  @@index([professionalId, isActive])
+  @@map("professional_availabilities")
+}
 
 // model ProfessionalBreak {
 //   id             String   @id @default(uuid()) @map("break_id")
