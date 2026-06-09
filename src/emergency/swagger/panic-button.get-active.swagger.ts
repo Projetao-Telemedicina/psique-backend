@@ -8,7 +8,8 @@ export function GetMyActivePanicButtonApiDocs(): MethodDecorator {
     ApiOperation({
       summary: 'Busca o acionamento ativo do botão do pânico do paciente autenticado',
       description:
-        'Retorna o acionamento do botão do pânico em andamento do paciente autenticado, incluindo o histórico de ofertas.',
+        'Retorna o acionamento do botão do pânico em andamento do paciente autenticado, incluindo o histórico de ofertas ' +
+        'e a consulta provisória atualmente vinculada ao fluxo de atendimento emergencial.',
     }),
     ApiOkResponse({
       description: 'Acionamento ativo retornado com sucesso.',

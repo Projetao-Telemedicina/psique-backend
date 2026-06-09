@@ -16,6 +16,7 @@ import { DiaryModule } from './diary/diary.module';
 import { MatchingModule } from './matching/matching.module';
 import { ReviewModule } from './review/review.module';
 import { PanicButtonModule } from './emergency/panic-button.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { PanicButtonModule } from './emergency/panic-button.module';
     MatchingModule,
     ReviewModule,
     PanicButtonModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

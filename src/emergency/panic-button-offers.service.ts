@@ -9,6 +9,7 @@ import {
   EmergencyRequestStatus,
 } from '@prisma/client';
 import { PrismaService } from '@/prisma';
+import { PanicButtonAppointmentsService } from './panic-button-appointments.service';
 import { EMERGENCY_EVENTS } from './constants/panic-button.constants';
 import { RejectPanicButtonOfferDto } from './dto/reject-panic-button-offer.dto';
 import { PanicButtonTimeoutsService } from './panic-button-timeouts.service';
@@ -21,6 +22,7 @@ export class PanicButtonOffersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly panicButtonAppointmentsService: PanicButtonAppointmentsService,
     private readonly panicButtonOfferRepository: PanicButtonOfferRepository,
     private readonly panicButtonRequestRepository: PanicButtonRequestRepository,
     private readonly panicButtonProfessionalRepository: PanicButtonProfessionalRepository,
@@ -126,6 +128,11 @@ export class PanicButtonOffersService {
         offer.emergencyRequestId,
       );
 
+      await this.panicButtonAppointmentsService.deleteByEmergencyRequestId(
+        tx,
+        offer.emergencyRequestId,
+      );
+
       await this.panicButtonProfessionalRepository.releaseProfessionalFromOffer(
         tx,
         professionalId,
@@ -165,6 +172,11 @@ export class PanicButtonOffersService {
       );
 
       await this.panicButtonRequestRepository.markAsSearching(
+        tx,
+        offer.emergencyRequestId,
+      );
+
+      await this.panicButtonAppointmentsService.deleteByEmergencyRequestId(
         tx,
         offer.emergencyRequestId,
       );
