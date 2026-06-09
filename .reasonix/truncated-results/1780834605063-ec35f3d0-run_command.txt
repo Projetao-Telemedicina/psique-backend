@@ -1,0 +1,507 @@
+$ node node_modules/jest/bin/jest.js --config test/jest-e2e.json test/professionals --forceExit
+[exit 1]
+FAIL test/professionals/professionals.e2e-spec.ts (7.725 s)
+  ● ProfessionalsController (e2e) › GET /professionals/:userId returns the professional profile with user data
+
+    PrismaClientKnownRequestError: 
+    Invalid `this.prisma.emergencyOffer.findMany()` invocation in
+    C:\Users\ejtr1\OneDrive\Documentos\Projetos\psique-backend\src\emergency\repositories\panic-button-offer.repository.ts:68:39
+
+      65 }
+      66 
+      67 findPendingOffersForRecovery() {
+    → 68   return this.prisma.emergencyOffer.findMany(
+
+    [0m [90m 18 |[39m
+     [90m 19 |[39m   [36masync[39m onModuleInit() {
+    [31m[1m>[22m[39m[90m 20 |[39m     [36mconst[39m [requests[33m,[39m offers] [33m=[39m [36mawait[39m [33mPromise[39m[33m.[39mall([
+     [90m    |[39m                                [31m[1m^[22m[39m
+     [90m 21 |[39m       [36mthis[39m[33m.[39mpanicButtonRequestRepository[33m.[39mfindOpenRequestsForRecovery()[33m,[39m
+     [90m 22 |[39m       [36mthis[39m[33m.[39mpanicButtonOfferRepository[33m.[39mfindPendingOffersForRecovery()[33m,[39m
+     [90m 23 |[39m     ])[33m;[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+          at async Promise.all (index 1)
+      at PanicButtonTimeoutsService.onModuleInit (../src/emergency/panic-button-timeouts.service.ts:20:32)
+          at async Promise.all (index 0)
+      at callModuleInitHook (../node_modules/@nestjs/core/hooks/on-module-init.hook.js:43:5)
+      at Proxy.callInitHook (../node_modules/@nestjs/core/nest-application-context.js:252:13)
+      at Proxy.init (../node_modules/@nestjs/core/nest-application.js:103:9)
+      at createE2eApp (e2e-helpers.ts:42:3)
+      at Object.<anonymous> (professionals/professionals.e2e-spec.ts:30:15)
+
+  ● ProfessionalsController (e2e) › GET /professionals lists approved professionals ordered by scoreAvg
+
+    PrismaClientKnownRequestError: 
+    Invalid `this.prisma.emergencyOffer.findMany()` invocation in
+    C:\Users\ejtr1\OneDrive\Documentos\Projetos\psique-backend\src\emergency\repositories\panic-button-offer.repository.ts:68:39
+
+      65 }
+      66 
+      67 findPendingOffersForRecovery() {
+    → 68   return this.prisma.emergencyOffer.findMany(
+
+    [0m [90m 18 |[39m
+     [90m 19 |[39m   [36masync[39m onModuleInit() {
+    [31m[1m>[22m[39m[90m 20 |[39m     [36mconst[39m [requests[33m,[39m offers] [33m=[39m [36mawait[39m [33mPromise[39m[33m.[39mall([
+     [90m    |[39m                                [31m[1m^[22m[39m
+     [90m 21 |[39m       [36mthis[39m[33m.[39mpanicButtonRequestRepository[33m.[39mfindOpenRequestsForRecovery()[33m,[39m
+     [90m 22 |[39m       [36mthis[39m[33m.[39mpanicButtonOfferRepository[33m.[39mfindPendingOffersForRecovery()[33m,[39m
+     [90m 23 |[39m     ])[33m;[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+          at async Promise.all (index 1)
+      at PanicButtonTimeoutsService.onModuleInit (../src/emergency/panic-button-timeouts.service.ts:20:32)
+          at async Promise.all (index 0)
+      at callModuleInitHook (../node_modules/@nestjs/core/hooks/on-module-init.hook.js:43:5)
+      at Proxy.callInitHook (../node_modules/@nestjs/core/nest-application-context.js:252:13)
+      at Proxy.init (../node_modules/@nestjs/core/nest-application.js:103:9)
+      at createE2eApp (e2e-helpers.ts:42:3)
+      at Object.<anonymous> (professionals/professionals.e2e-spec.ts:30:15)
+
+  ● ProfessionalsController (e2e) › PATCH /professionals/me lets a professional update their own profile
+
+    PrismaClientKnownRequestError: 
+    Invalid `this.prisma.emergencyOffer.findMany()` invocation in
+    C:\Users\ejtr1\OneDrive\Documentos\Projetos\psique-backend\src\emergency\repositories\panic-button-offer.repository.ts:68:39
+
+      65 }
+      66 
+      67 findPendingOffersForRecovery() {
+    → 68   return this.prisma.emergencyOffer.findMany(
+
+    [0m [90m 18 |[39m
+     [90m 19 |[39m   [36masync[39m onModuleInit() {
+    [31m[1m>[22m[39m[90m 20 |[39m     [36mconst[39m [requests[33m,[39m offers] [33m=[39m [36mawait[39m [33mPromise[39m[33m.[39mall([
+     [90m    |[39m                                [31m[1m^[22m[39m
+     [90m 21 |[39m       [36mthis[39m[33m.[39mpanicButtonRequestRepository[33m.[39mfindOpenRequestsForRecovery()[33m,[39m
+     [90m 22 |[39m       [36mthis[39m[33m.[39mpanicButtonOfferRepository[33m.[39mfindPendingOffersForRecovery()[33m,[39m
+     [90m 23 |[39m     ])[33m;[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+          at async Promise.all (index 1)
+      at PanicButtonTimeoutsService.onModuleInit (../src/emergency/panic-button-timeouts.service.ts:20:32)
+          at async Promise.all (index 0)
+      at callModuleInitHook (../node_modules/@nestjs/core/hooks/on-module-init.hook.js:43:5)
+      at Proxy.callInitHook (../node_modules/@nestjs/core/nest-application-context.js:252:13)
+      at Proxy.init (../node_modules/@nestjs/core/nest-application.js:103:9)
+      at createE2eApp (e2e-helpers.ts:42:3)
+      at Object.<anonymous> (professionals/professionals.e2e-spec.ts:30:15)
+
+  ● ProfessionalsController (e2e) › PATCH /admin/professionals/:userId lets an admin update any professional profile
+
+    PrismaClientKnownRequestError: 
+    Invalid `this.prisma.emergencyOffer.findMany()` invocation in
+    C:\Users\ejtr1\OneDrive\Documentos\Projetos\psique-backend\src\emergency\repositories\panic-button-offer.repository.ts:68:39
+
+      65 }
+      66 
+      67 findPendingOffersForRecovery() {
+    → 68   return this.prisma.emergencyOffer.findMany(
+
+    [0m [90m 18 |[39m
+     [90m 19 |[39m   [36masync[39m onModuleInit() {
+    [31m[1m>[22m[39m[90m 20 |[39m     [36mconst[39m [requests[33m,[39m offers] [33m=[39m [36mawait[39m [33mPromise[39m[33m.[39mall([
+     [90m    |[39m                                [31m[1m^[22m[39m
+     [90m 21 |[39m       [36mthis[39m[33m.[39mpanicButtonRequestRepository[33m.[39mfindOpenRequestsForRecovery()[33m,[39m
+     [90m 22 |[39m       [36mthis[39m[33m.[39mpanicButtonOfferRepository[33m.[39mfindPendingOffersForRecovery()[33m,[39m
+     [90m 23 |[39m     ])[33m;[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+          at async Promise.all (index 1)
+      at PanicButtonTimeoutsService.onModuleInit (../src/emergency/panic-button-timeouts.service.ts:20:32)
+          at async Promise.all (index 0)
+      at callModuleInitHook (../node_modules/@nestjs/core/hooks/on-module-init.hook.js:43:5)
+      at Proxy.callInitHook (../node_modules/@nestjs/core/nest-application-context.js:252:13)
+      at Proxy.init (../node_modules/@nestjs/core/nest-application.js:103:9)
+      at createE2eApp (e2e-helpers.ts:42:3)
+      at Object.<anonymous> (professionals/professionals.e2e-spec.ts:30:15)
+
+  ● ProfessionalsController (e2e) › PATCH /admin/professionals/:userId forbids a professional from updating another professional profile
+
+    PrismaClientKnownRequestError: 
+    Invalid `this.prisma.emergencyOffer.findMany()` invocation in
+    C:\Users\ejtr1\OneDrive\Documentos\Projetos\psique-backend\src\emergency\repositories\panic-button-offer.repository.ts:68:39
+
+      65 }
+      66 
+      67 findPendingOffersForRecovery() {
+    → 68   return this.prisma.emergencyOffer.findMany(
+
+    [0m [90m 18 |[39m
+     [90m 19 |[39m   [36masync[39m onModuleInit() {
+    [31m[1m>[22m[39m[90m 20 |[39m     [36mconst[39m [requests[33m,[39m offers] [33m=[39m [36mawait[39m [33mPromise[39m[33m.[39mall([
+     [90m    |[39m                                [31m[1m^[22m[39m
+     [90m 21 |[39m       [36mthis[39m[33m.[39mpanicButtonRequestRepository[33m.[39mfindOpenRequestsForRecovery()[33m,[39m
+     [90m 22 |[39m       [36mthis[39m[33m.[39mpanicButtonOfferRepository[33m.[39mfindPendingOffersForRecovery()[33m,[39m
+     [90m 23 |[39m     ])[33m;[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+          at async Promise.all (index 1)
+      at PanicButtonTimeoutsService.onModuleInit (../src/emergency/panic-button-timeouts.service.ts:20:32)
+          at async Promise.all (index 0)
+      at callModuleInitHook (../node_modules/@nestjs/core/hooks/on-module-init.hook.js:43:5)
+      at Proxy.callInitHook (../node_modules/@nestjs/core/nest-application-context.js:252:13)
+      at Proxy.init (../node_modules/@nestjs/core/nest-application.js:103:9)
+      at createE2eApp (e2e-helpers.ts:42:3)
+      at Object.<anonymous> (professionals/professionals.e2e-spec.ts:30:15)
+
+  ● ProfessionalsController (e2e) › GET /professionals/:userId returns 404 for a missing profile
+
+    PrismaClientKnownRequestError: 
+    Invalid `this.prisma.emergencyOffer.findMany()` invocation in
+    C:\Users\ejtr1\OneDrive\Documentos\Projetos\psique-backend\src\emergency\repositories\panic-button-offer.repository.ts:68:39
+
+      65 }
+      66 
+      67 findPendingOffersForRecovery() {
+    → 68   return this.prisma.emergencyOffer.findMany(
+
+    [0m [90m 18 |[39m
+     [90m 19 |[39m   [36masync[39m onModuleInit() {
+    [31m[1m>[22m[39m[90m 20 |[39m     [36mconst[39m [requests[33m,[39m offers] [33m=[39m [36mawait[39m [33mPromise[39m[33m.[39mall([
+     [90m    |[39m                                [31m[1m^[22m[39m
+     [90m 21 |[39m       [36mthis[39m[33m.[39mpanicButtonRequestRepository[33m.[39mfindOpenRequestsForRecovery()[33m,[39m
+     [90m 22 |[39m       [36mthis[39m[33m.[39mpanicButtonOfferRepository[33m.[39mfindPendingOffersForRecovery()[33m,[39m
+     [90m 23 |[39m     ])[33m;[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+          at async Promise.all (index 1)
+      at PanicButtonTimeoutsService.onModuleInit (../src/emergency/panic-button-timeouts.service.ts:20:32)
+          at async Promise.all (index 0)
+      at callModuleInitHook (../node_modules/@nestjs/core/hooks/on-module-init.hook.js:43:5)
+      at Proxy.callInitHook (../node_modules/@nestjs/core/nest-application-context.js:252:13)
+      at Proxy.init (../node_modules/@nestjs/core/nest-application.js:103:9)
+      at createE2eApp (e2e-helpers.ts:42:3)
+      at Object.<anonymous> (professionals/professionals.e2e-spec.ts:30:15)
+
+  ● ProfessionalsController (e2e) › PATCH /professionals/me/online-mode lets a professional update their own status
+
+    PrismaClientKnownRequestError: 
+    Invalid `this.prisma.emergencyOffer.findMany()` invocation in
+    C:\Users\ejtr1\OneDrive\Documentos\Projetos\psique-backend\src\emergency\repositories\panic-button-offer.repository.ts:68:39
+
+      65 }
+      66 
+      67 findPendingOffersForRecovery() {
+    → 68   return this.prisma.emergencyOffer.findMany(
+
+    [0m [90m 18 |[39m
+     [90m 19 |[39m   [36masync[39m onModuleInit() {
+    [31m[1m>[22m[39m[90m 20 |[39m     [36mconst[39m [requests[33m,[39m offers] [33m=[39m [36mawait[39m [33mPromise[39m[33m.[39mall([
+     [90m    |[39m                                [31m[1m^[22m[39m
+     [90m 21 |[39m       [36mthis[39m[33m.[39mpanicButtonRequestRepository[33m.[39mfindOpenRequestsForRecovery()[33m,[39m
+     [90m 22 |[39m       [36mthis[39m[33m.[39mpanicButtonOfferRepository[33m.[39mfindPendingOffersForRecovery()[33m,[39m
+     [90m 23 |[39m     ])[33m;[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+          at async Promise.all (index 1)
+      at PanicButtonTimeoutsService.onModuleInit (../src/emergency/panic-button-timeouts.service.ts:20:32)
+          at async Promise.all (index 0)
+      at callModuleInitHook (../node_modules/@nestjs/core/hooks/on-module-init.hook.js:43:5)
+      at Proxy.callInitHook (../node_modules/@nestjs/core/nest-application-context.js:252:13)
+      at Proxy.init (../node_modules/@nestjs/core/nest-application.js:103:9)
+      at createE2eApp (e2e-helpers.ts:42:3)
+      at Object.<anonymous> (professionals/professionals.e2e-spec.ts:30:15)
+
+  ● ProfessionalsController (e2e) › PATCH /admin/professionals/:userId/online-mode lets an admin update any professional status
+
+    PrismaClientKnownRequestError: 
+    Invalid `this.prisma.emergencyOffer.findMany()` invocation in
+    C:\Users\ejtr1\OneDrive\Documentos\Projetos\psique-backend\src\emergency\repositories\panic-button-offer.repository.ts:68:39
+
+      65 }
+      66 
+      67 findPendingOffersForRecovery() {
+    → 68   return this.prisma.emergencyOffer.findMany(
+
+    [0m [90m 18 |[39m
+     [90m 19 |[39m   [36masync[39m onModuleInit() {
+    [31m[1m>[22m[39m[90m 20 |[39m     [36mconst[39m [requests[33m,[39m offers] [33m=[39m [36mawait[39m [33mPromise[39m[33m.[39mall([
+     [90m    |[39m                                [31m[1m^[22m[39m
+     [90m 21 |[39m       [36mthis[39m[33m.[39mpanicButtonRequestRepository[33m.[39mfindOpenRequestsForRecovery()[33m,[39m
+     [90m 22 |[39m       [36mthis[39m[33m.[39mpanicButtonOfferRepository[33m.[39mfindPendingOffersForRecovery()[33m,[39m
+     [90m 23 |[39m     ])[33m;[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+          at async Promise.all (index 1)
+      at PanicButtonTimeoutsService.onModuleInit (../src/emergency/panic-button-timeouts.service.ts:20:32)
+          at async Promise.all (index 0)
+      at callModuleInitHook (../node_modules/@nestjs/core/hooks/on-module-init.hook.js:43:5)
+      at Proxy.callInitHook (../node_modules/@nestjs/core/nest-application-context.js:252:13)
+      at Proxy.init (../node_modules/@nestjs/core/nest-application.js:103:9)
+      at createE2eApp (e2e-helpers.ts:42:3)
+      at Object.<anonymous> (professionals/professionals.e2e-spec.ts:30:15)
+
+  ● ProfessionalsController (e2e) › PATCH /admin/professionals/:userId/online-mode forbids a professional from updating another professional status
+
+    PrismaClientKnownRequestError: 
+    Invalid `this.prisma.emergencyOffer.findMany()` invocation in
+    C:\Users\ejtr1\OneDrive\Documentos\Projetos\psique-backend\src\emergency\repositories\panic-button-offer.repository.ts:68:39
+
+      65 }
+      66 
+      67 findPendingOffersForRecovery() {
+    → 68   return this.prisma.emergencyOffer.findMany(
+
+    [0m [90m 18 |[39m
+     [90m 19 |[39m   [36masync[39m onModuleInit() {
+    [31m[1m>[22m[39m[90m 20 |[39m     [36mconst[39m [requests[33m,[39m offers] [33m=[39m [36mawait[39m [33mPromise[39m[33m.[39mall([
+     [90m    |[39m                                [31m[1m^[22m[39m
+     [90m 21 |[39m       [36mthis[39m[33m.[39mpanicButtonRequestRepository[33m.[39mfindOpenRequestsForRecovery()[33m,[39m
+     [90m 22 |[39m       [36mthis[39m[33m.[39mpanicButtonOfferRepository[33m.[39mfindPendingOffersForRecovery()[33m,[39m
+     [90m 23 |[39m     ])[33m;[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+          at async Promise.all (index 1)
+      at PanicButtonTimeoutsService.onModuleInit (../src/emergency/panic-button-timeouts.service.ts:20:32)
+          at async Promise.all (index 0)
+      at callModuleInitHook (../node_modules/@nestjs/core/hooks/on-module-init.hook.js:43:5)
+      at Proxy.callInitHook (../node_modules/@nestjs/core/nest-application-context.js:252:13)
+      at Proxy.init (../node_modules/@nestjs/core/nest-application.js:103:9)
+      at createE2eApp (e2e-helpers.ts:42:3)
+      at Object.<anonymous> (professionals/professionals.e2e-spec.ts:30:15)
+
+  ● ProfessionalsController (e2e) › POST /professionals/me/validation-request lets a professional submit RG for review
+
+    PrismaClientKnownRequestError: 
+    Invalid `this.prisma.emergencyOffer.findMany()` invocation in
+    C:\Users\ejtr1\OneDrive\Documentos\Projetos\psique-backend\src\emergency\repositories\panic-button-offer.repository.ts:68:39
+
+      65 }
+      66 
+      67 findPendingOffersForRecovery() {
+    → 68   return this.prisma.emergencyOffer.findMany(
+
+    [0m [90m 18 |[39m
+     [90m 19 |[39m   [36masync[39m onModuleInit() {
+    [31m[1m>[22m[39m[90m 20 |[39m     [36mconst[39m [requests[33m,[39m offers] [33m=[39m [36mawait[39m [33mPromise[39m[33m.[39mall([
+     [90m    |[39m                                [31m[1m^[22m[39m
+     [90m 21 |[39m       [36mthis[39m[33m.[39mpanicButtonRequestRepository[33m.[39mfindOpenRequestsForRecovery()[33m,[39m
+     [90m 22 |[39m       [36mthis[39m[33m.[39mpanicButtonOfferRepository[33m.[39mfindPendingOffersForRecovery()[33m,[39m
+     [90m 23 |[39m     ])[33m;[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+          at async Promise.all (index 1)
+      at PanicButtonTimeoutsService.onModuleInit (../src/emergency/panic-button-timeouts.service.ts:20:32)
+          at async Promise.all (index 0)
+      at callModuleInitHook (../node_modules/@nestjs/core/hooks/on-module-init.hook.js:43:5)
+      at Proxy.callInitHook (../node_modules/@nestjs/core/nest-application-context.js:252:13)
+      at Proxy.init (../node_modules/@nestjs/core/nest-application.js:103:9)
+      at createE2eApp (e2e-helpers.ts:42:3)
+      at Object.<anonymous> (professionals/professionals.e2e-spec.ts:30:15)
+
+  ● ProfessionalsController (e2e) › GET /professionals/me/validation-request returns only the authenticated professional latest request
+
+    PrismaClientKnownRequestError: 
+    Invalid `this.prisma.emergencyOffer.findMany()` invocation in
+    C:\Users\ejtr1\OneDrive\Documentos\Projetos\psique-backend\src\emergency\repositories\panic-button-offer.repository.ts:68:39
+
+      65 }
+      66 
+      67 findPendingOffersForRecovery() {
+    → 68   return this.prisma.emergencyOffer.findMany(
+
+    [0m [90m 18 |[39m
+     [90m 19 |[39m   [36masync[39m onModuleInit() {
+    [31m[1m>[22m[39m[90m 20 |[39m     [36mconst[39m [requests[33m,[39m offers] [33m=[39m [36mawait[39m [33mPromise[39m[33m.[39mall([
+     [90m    |[39m                                [31m[1m^[22m[39m
+     [90m 21 |[39m       [36mthis[39m[33m.[39mpanicButtonRequestRepository[33m.[39mfindOpenRequestsForRecovery()[33m,[39m
+     [90m 22 |[39m       [36mthis[39m[33m.[39mpanicButtonOfferRepository[33m.[39mfindPendingOffersForRecovery()[33m,[39m
+     [90m 23 |[39m     ])[33m;[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+          at async Promise.all (index 1)
+      at PanicButtonTimeoutsService.onModuleInit (../src/emergency/panic-button-timeouts.service.ts:20:32)
+          at async Promise.all (index 0)
+      at callModuleInitHook (../node_modules/@nestjs/core/hooks/on-module-init.hook.js:43:5)
+      at Proxy.callInitHook (../node_modules/@nestjs/core/nest-application-context.js:252:13)
+      at Proxy.init (../node_modules/@nestjs/core/nest-application.js:103:9)
+      at createE2eApp (e2e-helpers.ts:42:3)
+      at Object.<anonymous> (professionals/professionals.e2e-spec.ts:30:15)
+
+  ● ProfessionalsController (e2e) › GET /professionals/me/validation-requests returns the authenticated professional history only
+
+    PrismaClientKnownRequestError: 
+    Invalid `this.prisma.emergencyOffer.findMany()` invocation in
+    C:\Users\ejtr1\OneDrive\Documentos\Projetos\psique-backend\src\emergency\repositories\panic-button-offer.repository.ts:68:39
+
+      65 }
+      66 
+      67 findPendingOffersForRecovery() {
+    → 68   return this.prisma.emergencyOffer.findMany(
+
+    [0m [90m 18 |[39m
+     [90m 19 |[39m   [36masync[39m onModuleInit() {
+    [31m[1m>[22m[39m[90m 20 |[39m     [36mconst[39m [requests[33m,[39m offers] [33m=[39m [36mawait[39m [33mPromise[39m[33m.[39mall([
+     [90m    |[39m                                [31m[1m^[22m[39m
+     [90m 21 |[39m       [36mthis[39m[33m.[39mpanicButtonRequestRepository[33m.[39mfindOpenRequestsForRecovery()[33m,[39m
+     [90m 22 |[39m       [36mthis[39m[33m.[39mpanicButtonOfferRepository[33m.[39mfindPendingOffersForRecovery()[33m,[39m
+     [90m 23 |[39m     ])[33m;[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+          at async Promise.all (index 1)
+      at PanicButtonTimeoutsService.onModuleInit (../src/emergency/panic-button-timeouts.service.ts:20:32)
+          at async Promise.all (index 0)
+      at callModuleInitHook (../node_modules/@nestjs/core/hooks/on-module-init.hook.js:43:5)
+      at Proxy.callInitHook (../node_modules/@nestjs/core/nest-application-context.js:252:13)
+      at Proxy.init (../node_modules/@nestjs/core/nest-application.js:103:9)
+      at createE2eApp (e2e-helpers.ts:42:3)
+      at Object.<anonymous> (professionals/professionals.e2e-spec.ts:30:15)
+
+  ● ProfessionalsController (e2e) › POST /professionals/me/validation-request blocks a second pending request for the same professional
+
+    PrismaClientKnownRequestError: 
+    Invalid `this.prisma.emergencyOffer.findMany()` invocation in
+    C:\Users\ejtr1\OneDrive\Documentos\Projetos\psique-backend\src\emergency\repositories\panic-button-offer.repository.ts:68:39
+
+      65 }
+      66 
+      67 findPendingOffersForRecovery() {
+    → 68   return this.prisma.emergencyOffer.findMany(
+
+    [0m [90m 18 |[39m
+     [90m 19 |[39m   [36masync[39m onModuleInit() {
+    [31m[1m>[22m[39m[90m 20 |[39m     [36mconst[39m [requests[33m,[39m offers] [33m=[39m [36mawait[39m [33mPromise[39m[33m.[39mall([
+     [90m    |[39m                                [31m[1m^[22m[39m
+     [90m 21 |[39m       [36mthis[39m[33m.[39mpanicButtonRequestRepository[33m.[39mfindOpenRequestsForRecovery()[33m,[39m
+     [90m 22 |[39m       [36mthis[39m[33m.[39mpanicButtonOfferRepository[33m.[39mfindPendingOffersForRecovery()[33m,[39m
+     [90m 23 |[39m     ])[33m;[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+          at async Promise.all (index 1)
+      at PanicButtonTimeoutsService.onModuleInit (../src/emergency/panic-button-timeouts.service.ts:20:32)
+          at async Promise.all (index 0)
+      at callModuleInitHook (../node_modules/@nestjs/core/hooks/on-module-init.hook.js:43:5)
+      at Proxy.callInitHook (../node_modules/@nestjs/core/nest-application-context.js:252:13)
+      at Proxy.init (../node_modules/@nestjs/core/nest-application.js:103:9)
+      at createE2eApp (e2e-helpers.ts:42:3)
+      at Object.<anonymous> (professionals/professionals.e2e-spec.ts:30:15)
+
+  ● ProfessionalsController (e2e) › POST /professionals/me/validation-request rejects invalid file types and spoofed content
+
+    PrismaClientKnownRequestError: 
+    Invalid `this.prisma.emergencyOffer.findMany()` invocation in
+    C:\Users\ejtr1\OneDrive\Documentos\Projetos\psique-backend\src\emergency\repositories\panic-button-offer.repository.ts:68:39
+
+      65 }
+      66 
+      67 findPendingOffersForRecovery() {
+    → 68   return this.prisma.emergencyOffer.findMany(
+
+    [0m [90m 18 |[39m
+     [90m 19 |[39m   [36masync[39m onModuleInit() {
+    [31m[1m>[22m[39m[90m 20 |[39m     [36mconst[39m [requests[33m,[39m offers] [33m=[39m [36mawait[39m [33mPromise[39m[33m.[39mall([
+     [90m    |[39m                                [31m[1m^[22m[39m
+     [90m 21 |[39m       [36mthis[39m[33m.[39mpanicButtonRequestRepository[33m.[39mfindOpenRequestsForRecovery()[33m,[39m
+     [90m 22 |[39m       [36mthis[39m[33m.[39mpanicButtonOfferRepository[33m.[39mfindPendingOffersForRecovery()[33m,[39m
+     [90m 23 |[39m     ])[33m;[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+          at async Promise.all (index 1)
+      at PanicButtonTimeoutsService.onModuleInit (../src/emergency/panic-button-timeouts.service.ts:20:32)
+          at async Promise.all (index 0)
+      at callModuleInitHook (../node_modules/@nestjs/core/hooks/on-module-init.hook.js:43:5)
+      at Proxy.callInitHook (../node_modules/@nestjs/core/nest-application-context.js:252:13)
+      at Proxy.init (../node_modules/@nestjs/core/nest-application.js:103:9)
+      at createE2eApp (e2e-helpers.ts:42:3)
+      at Object.<anonymous> (professionals/professionals.e2e-spec.ts:30:15)
+
+  ● ProfessionalsController (e2e) › POST /professionals/me/validation-request forbids patients from using the professional validation route
+
+    PrismaClientKnownRequestError: 
+    Invalid `this.prisma.emergencyOffer.findMany()` invocation in
+    C:\Users\ejtr1\OneDrive\Documentos\Projetos\psique-backend\src\emergency\repositories\panic-button-offer.repository.ts:68:39
+
+      65 }
+      66 
+      67 findPendingOffersForRecovery() {
+    → 68   return this.prisma.emergencyOffer.findMany(
+
+    [0m [90m 18 |[39m
+     [90m 19 |[39m   [36masync[39m onModuleInit() {
+    [31m[1m>[22m[39m[90m 20 |[39m     [36mconst[39m [requests[33m,[39m offers] [33m=[39m [36mawait[39m [33mPromise[39m[33m.[39mall([
+     [90m    |[39m                                [31m[1m^[22m[39m
+     [90m 21 |[39m       [36mthis[39m[33m.[39mpanicButtonRequestRepository[33m.[39mfindOpenRequestsForRecovery()[33m,[39m
+     [90m 22 |[39m       [36mthis[39m[33m.[39mpanicButtonOfferRepository[33m.[39mfindPendingOffersForRecovery()[33m,[39m
+     [90m 23 |[39m     ])[33m;[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.request (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+      at a (../node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+          at async Promise.all (index 1)
+      at PanicButtonTimeoutsService.onModuleInit (../src/emergency/panic-button-timeouts.service.ts:20:32)
+          at async Promise.all (index 0)
+      at callModuleInitHook (../node_modules/@nestjs/core/hooks/on-module-init.hook.js:43:5)
+      at Proxy.callInitHook (../node_modules/@nestjs/core/nest-application-context.js:252:13)
+      at Proxy.init (../node_modules/@nestjs/core/nest-application.js:103:9)
+      at createE2eApp (e2e-helpers.ts:42:3)
+      at Object.<anonymous> (professionals/professionals.e2e-spec.ts:30:15)
+
+  ● ProfessionalsController (e2e) › GET /admin/professionals/validation-requests lets an admin filter requests by id, name and date
+
+    PrismaClientKnownRequestError: 
+    Invalid `this.prisma.emergencyOffer.findMany()` invocation in
+    C:\Users\ejtr1\OneDrive\Documentos\Projetos\psique-backend\src\emergency\repositories\panic-button-offer.repository.ts:68:39
+
+      65 }
+      66 
+      67 findPendingOffersForRecovery() {
+    → 68   return this.prisma.emergencyOffer.findMany(
+
+    [0m [90m 18 |[39m
+     [90m 19 |[39m   [36masync[39m onModuleInit() {
+    [31m[1m>[22m[39m[90m 20 |[39m     [36mconst[39m [requests[33m,[39m offers] [33m=[39m [36mawait[39m [33mPromise[39m[33m.[39mall([
+     [90m    |[39m                                [31m[1m^[22m[39m
+     [90m 21 |[39m       [36mthis[39m[33m.[39mpanicButtonRequestRepository[33m.[39mfindOpenRequestsForRecovery()[33m,[39m
+     [90m 22 |[39m       [36mthis[39m[33m.[39mpanicButtonOfferRepository[33m.[39mfindPendingOffersForRecovery()[33m,[39m
+     [90m 23 |[39m     ])[33m;[39m[0m
+
+      at zr.handleRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+      at zr.handleAndLogRequestError (../node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+      at zr.reque
+
+[… truncated 34314 chars …]

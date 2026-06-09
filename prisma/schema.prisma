@@ -92,6 +92,12 @@ enum DiarySleepQuality {
   LESS_THAN_FOUR
 }
 
+enum RecurrenceType {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
 // enum CalendarEventType {
 //   PERSONAL_COMMITMENT
 //   BLOCKED_TIME
@@ -265,6 +271,7 @@ model PatientProfile {
   // wallet         Wallet?
   // panicRequests  PanicRequest[]
   diaryEntries   DiaryEntry[]
+  questionnaire  PatientQuestionnaire?
 
   @@map("patient_profiles")
 }
@@ -286,9 +293,9 @@ model ProfessionalProfile {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  requests         ProfessionalRequest[]
-  chatRooms        ChatRoom[]
-  // availabilities  ProfessionalAvailability[]
+  requests       ProfessionalRequest[]
+  chatRooms      ChatRoom[]
+  availabilities ProfessionalAvailability[]
   // breaks          ProfessionalBreak[]
   // calendarEvents  ProfessionalCalendarEvent[]
   appointments    Appointment[]
@@ -299,6 +306,7 @@ model ProfessionalProfile {
   // promotions      ProfessionalPromotion[]
   // acceptedPanics  PanicRequest[]      @relation("AcceptedProfessional")
   // panicOffers     PanicRequestOffer[]
+  questionnaire   ProfessionalQuestionnaire?
 
   @@map("professional_profiles")
 }
@@ -335,19 +343,24 @@ model ProfessionalRequestDocument {
   @@map("professional_request_documents")
 }
 
-// model ProfessionalAvailability {
-//   id                  String  @id @default(uuid()) @map("availability_id")
-//   professionalId      String  @map("professional_id")
-//   weekday             Int
-//   startTime           String  @map("start_time")
-//   endTime             String  @map("end_time")
-//   slotDurationMinutes Int     @default(50) @map("slot_duration_minutes")
-//   isActive            Boolean @default(true) @map("is_active")
+model ProfessionalAvailability {
+  id                  String         @id @default(uuid()) @map("availability_id")
+  professionalId      String         @map("professional_id")
+  weekday             Int            // 0 = domingo ... 6 = sábado
+  startTime           String         @map("start_time")  // "HH:MM"
+  endTime             String         @map("end_time")    // "HH:MM"
+  slotDurationMinutes Int            @default(50) @map("slot_duration_minutes")
+  recurrence          RecurrenceType @default(WEEKLY)
+  isActive            Boolean        @default(true) @map("is_active")
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
 
-//   professional ProfessionalProfile @relation(fields: [professionalId], references: [userId], onDelete: Cascade)
+  professional ProfessionalProfile @relation(fields: [professionalId], references: [userId], onDelete: Cascade)
 
-//   @@map("professional_availability")
-// }
+  @@unique([professionalId, weekday, startTime, recurrence])
+  @@index([professionalId, isActive])
+  @@map("professional_availabilities")
+}
 
 // model ProfessionalBreak {
 //   id             String   @id @default(uuid()) @map("break_id")
@@ -788,6 +801,47 @@ model DiaryEntry {
   patient      PatientProfile     @relation(fields: [patientId], references: [userId], onDelete: Cascade)
 
   @@map("diary_entries")
+}
+
+model PatientQuestionnaire {
+  userId             String   @id @map("user_id")
+  motivoTerapia      Int      @map("motivo_terapia")
+  abordagem          Int
+  estiloTerapeutico  Int      @map("estilo_terapeutico")
+  objetivo           Int
+  genero             Int
+  experiencia        Int
+  contextos          Int[]
+  ignoraContextos    Boolean  @default(false) @map("ignora_contextos")
+  tempoBusca         Int      @map("tempo_busca")
+  experienciaPrevia  Int      @map("experiencia_previa")
+  precisaSuporteFora Boolean  @default(false) @map("precisa_suporte_fora")
+  restricaoHorario   Boolean  @default(false) @map("restricao_horario")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  patient PatientProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("patient_questionnaires")
+}
+
+model ProfessionalQuestionnaire {
+  userId              String   @id @map("user_id")
+  motivosTerapia      Int[]    @map("motivos_terapia")
+  abordagem           Int
+  estiloTerapeutico   Int      @map("estilo_terapeutico")
+  objetivo            Int
+  genero              Int
+  experiencia         Int
+  contextos           Int[]
+  suporteFora         Int      @map("suporte_fora")
+  periodoAtendimento  Int      @map("periodo_atendimento")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  professional ProfessionalProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@map("professional_questionnaires")
 }
 
 // model Notification {

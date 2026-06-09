@@ -34,6 +34,7 @@ const prisma = new PrismaClient({
 });
 const defaultPassword = 'Password123';
 const validEntityKinds = ['admins', 'patients', 'professionals'];
+const validQuestionnaireModes = ['with', 'without'];
 
 const admins = [
   {
@@ -91,6 +92,20 @@ const patients = [
       emergencyContactPhone: '85977776666',
       shareDiaryWithProfessionals: true,
     },
+    questionnaire: {
+      motivoTerapia: 0,
+      abordagem: 1,
+      estiloTerapeutico: 2,
+      objetivo: 0,
+      genero: 3,
+      experiencia: 1,
+      contextos: [1, 0, 0, 0, 1],
+      ignoraContextos: false,
+      tempoBusca: 0,
+      experienciaPrevia: 0,
+      precisaSuporteFora: false,
+      restricaoHorario: false,
+    },
   },
   {
     name: 'Lucas Almeida',
@@ -111,6 +126,20 @@ const patients = [
       emergencyContactName: 'Renata Almeida',
       emergencyContactPhone: '85977775555',
       shareDiaryWithProfessionals: false,
+    },
+    questionnaire: {
+      motivoTerapia: 2,
+      abordagem: 0,
+      estiloTerapeutico: 0,
+      objetivo: 1,
+      genero: 4,
+      experiencia: 2,
+      contextos: [0, 1, 1, 0, 0],
+      ignoraContextos: false,
+      tempoBusca: 2,
+      experienciaPrevia: 2,
+      precisaSuporteFora: true,
+      restricaoHorario: true,
     },
   },
 ];
@@ -140,6 +169,17 @@ const professionals = [
       autoAbsenceMessage: 'Em atendimento no momento. Retorno em breve.',
       gapBetweenAppointmentsMinutes: 15,
     },
+    questionnaire: {
+      motivosTerapia: [1, 0, 1, 0, 0],
+      abordagem: 1,
+      estiloTerapeutico: 2,
+      objetivo: 0,
+      genero: 0,
+      experiencia: 1,
+      contextos: [1, 0, 1, 0, 1],
+      suporteFora: 1,
+      periodoAtendimento: 0,
+    },
   },
   {
     name: 'Dr. Rafael Nogueira',
@@ -164,6 +204,17 @@ const professionals = [
       availableForEmergency: false,
       autoAbsenceMessage: 'Atendimentos retomados às 14h.',
       gapBetweenAppointmentsMinutes: 30,
+    },
+    questionnaire: {
+      motivosTerapia: [0, 1, 1, 1, 0],
+      abordagem: 4,
+      estiloTerapeutico: 3,
+      objetivo: 2,
+      genero: 1,
+      experiencia: 2,
+      contextos: [0, 1, 0, 1, 0],
+      suporteFora: 0,
+      periodoAtendimento: 1,
     },
   },
 ];
@@ -211,8 +262,26 @@ async function upsertAdmin(admin, passwordHash) {
   });
 }
 
-async function upsertPatient(patient, passwordHash) {
-  await prisma.user.upsert({
+async function syncPatientQuestionnaire(userId, patient, questionnaireMode) {
+  if (questionnaireMode === 'with') {
+    await prisma.patientQuestionnaire.upsert({
+      where: { userId },
+      create: {
+        userId,
+        ...patient.questionnaire,
+      },
+      update: patient.questionnaire,
+    });
+    return;
+  }
+
+  await prisma.patientQuestionnaire.deleteMany({
+    where: { userId },
+  });
+}
+
+async function upsertPatient(patient, passwordHash, questionnaireMode) {
+  const user = await prisma.user.upsert({
     where: { email: patient.email },
     create: {
       name: patient.name,
@@ -261,9 +330,29 @@ async function upsertPatient(patient, passwordHash) {
       },
     },
   });
+
+  await syncPatientQuestionnaire(user.id, patient, questionnaireMode);
 }
 
-async function upsertProfessional(professional, passwordHash) {
+async function syncProfessionalQuestionnaire(userId, professional, questionnaireMode) {
+  if (questionnaireMode === 'with') {
+    await prisma.professionalQuestionnaire.upsert({
+      where: { userId },
+      create: {
+        userId,
+        ...professional.questionnaire,
+      },
+      update: professional.questionnaire,
+    });
+    return;
+  }
+
+  await prisma.professionalQuestionnaire.deleteMany({
+    where: { userId },
+  });
+}
+
+async function upsertProfessional(professional, passwordHash, questionnaireMode) {
   const existingByCrp = await prisma.professionalProfile.findUnique({
     where: { crp: professional.professionalProfile.crp },
     select: { userId: true },
@@ -280,7 +369,7 @@ async function upsertProfessional(professional, passwordHash) {
     );
   }
 
-  await prisma.user.upsert({
+  const user = await prisma.user.upsert({
     where: { email: professional.email },
     create: {
       name: professional.name,
@@ -329,6 +418,8 @@ async function upsertProfessional(professional, passwordHash) {
       },
     },
   });
+
+  await syncProfessionalQuestionnaire(user.id, professional, questionnaireMode);
 }
 
 function parseSelectedKinds() {
@@ -361,7 +452,25 @@ function parseSelectedKinds() {
   return new Set(selectedKinds);
 }
 
-function printCredentials(selectedKinds) {
+function parseQuestionnaireMode() {
+  const questionnairesArg = process.argv
+    .slice(2)
+    .find((argument) => argument.startsWith('--questionnaires='));
+
+  if (!questionnairesArg) {
+    return 'without';
+  }
+
+  const mode = questionnairesArg.slice('--questionnaires='.length).trim().toLowerCase();
+
+  if (!validQuestionnaireModes.includes(mode)) {
+    throw new Error(`Modo de questionario invalido: ${mode}. Use with ou without.`);
+  }
+
+  return mode;
+}
+
+function printCredentials(selectedKinds, questionnaireMode) {
   console.log('\nSeed concluído com sucesso.\n');
   console.log(`Senha padrão para todas as contas: ${defaultPassword}\n`);
 
@@ -377,6 +486,9 @@ function printCredentials(selectedKinds) {
     for (const patient of patients) {
       console.log(`- ${patient.name} | ${patient.email}`);
     }
+    console.log(
+      `Questionario de pacientes: ${questionnaireMode === 'with' ? 'respondido' : 'nao respondido'}`,
+    );
   }
 
   if (selectedKinds.has('professionals')) {
@@ -386,6 +498,11 @@ function printCredentials(selectedKinds) {
         `- ${professional.name} | ${professional.email} | ${professional.professionalProfile.crp}`,
       );
     }
+    console.log(
+      `Questionario de profissionais: ${
+        questionnaireMode === 'with' ? 'respondido' : 'nao respondido'
+      }`,
+    );
   }
 
   console.log('');
@@ -394,6 +511,7 @@ function printCredentials(selectedKinds) {
 async function main() {
   const passwordHash = await bcrypt.hash(defaultPassword, 10);
   const selectedKinds = parseSelectedKinds();
+  const questionnaireMode = parseQuestionnaireMode();
 
   if (selectedKinds.has('admins')) {
     for (const admin of admins) {
@@ -403,17 +521,17 @@ async function main() {
 
   if (selectedKinds.has('patients')) {
     for (const patient of patients) {
-      await upsertPatient(patient, passwordHash);
+      await upsertPatient(patient, passwordHash, questionnaireMode);
     }
   }
 
   if (selectedKinds.has('professionals')) {
     for (const professional of professionals) {
-      await upsertProfessional(professional, passwordHash);
+      await upsertProfessional(professional, passwordHash, questionnaireMode);
     }
   }
 
-  printCredentials(selectedKinds);
+  printCredentials(selectedKinds, questionnaireMode);
 }
 
 main()

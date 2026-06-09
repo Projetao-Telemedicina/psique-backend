@@ -23,3 +23,5 @@ export * from './appointment.update-status.swagger';
 export * from './appointment.update.swagger';
 
 export * from './can-join-appointment.swagger';
+
+export * from './appointment.get-by-date.swagger';

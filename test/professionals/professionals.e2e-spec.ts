@@ -1,11 +1,12 @@
-import request from 'supertest';
 import {
-  OnlineStatus,
-  ProfessionalApprovalStatus,
-  ProfessionalRequestStatus,
-  Role,
-  UserStatus,
+    OnlineStatus,
+    ProfessionalApprovalStatus,
+    ProfessionalRequestStatus,
+    RecurrenceType,
+    Role,
+    UserStatus,
 } from '@prisma/client';
+import request from 'supertest';
 import { E2eAppContext, createE2eApp, resetDatabase } from '../e2e-helpers';
 
 type AuthTokens = {
@@ -55,6 +56,31 @@ describe('ProfessionalsController (e2e)', () => {
       .expect(201);
 
     return response.body;
+  }
+
+  async function createApprovedProfessional(name: string, scoreAvg: number) {
+    return context.prisma.user.create({
+      data: {
+        name,
+        email: nextEmail(),
+        passwordHash: 'hashed_password',
+        role: Role.PROFESSIONAL,
+        status: UserStatus.ACTIVE,
+        professionalProfile: {
+          create: {
+            crp: nextCrp(),
+            specialty: 'Psicologia Clinica',
+            approvalStatus: ProfessionalApprovalStatus.APPROVED,
+            scoreAvg,
+            reviewCount: scoreAvg > 0 ? 1 : 0,
+            onlineStatus: OnlineStatus.OFFLINE,
+          },
+        },
+      },
+      include: {
+        professionalProfile: true,
+      },
+    });
   }
 
   async function createAdminUser() {
@@ -110,6 +136,46 @@ describe('ProfessionalsController (e2e)', () => {
         role: Role.PROFESSIONAL,
       },
     });
+  });
+
+  it('GET /professionals lists approved professionals ordered by scoreAvg', async () => {
+    const lowerScore = await createApprovedProfessional('Dra. Clara', 3.5);
+    const higherScore = await createApprovedProfessional('Dr. Hugo', 4.8);
+
+    await context.prisma.user.create({
+      data: {
+        name: 'Dra. Pending',
+        email: nextEmail(),
+        passwordHash: 'hashed_password',
+        role: Role.PROFESSIONAL,
+        status: UserStatus.ACTIVE,
+        professionalProfile: {
+          create: {
+            crp: nextCrp(),
+            specialty: 'Psicologia Clinica',
+            approvalStatus: ProfessionalApprovalStatus.PENDING,
+            scoreAvg: 5,
+            reviewCount: 1,
+            onlineStatus: OnlineStatus.OFFLINE,
+          },
+        },
+      },
+    });
+
+    const response = await request(context.app.getHttpServer())
+      .get('/professionals')
+      .query({ page: 1, limit: 10 })
+      .expect(200);
+
+    expect(response.body).toHaveLength(2);
+    expect(response.body[0]).toMatchObject({
+      userId: higherScore.id,
+    });
+    expect(response.body[1]).toMatchObject({
+      userId: lowerScore.id,
+    });
+    expect(Number(response.body[0].scoreAvg)).toBeCloseTo(4.8, 5);
+    expect(Number(response.body[1].scoreAvg)).toBeCloseTo(3.5, 5);
   });
 
   it('PATCH /professionals/me lets a professional update their own profile', async () => {
@@ -519,5 +585,291 @@ describe('ProfessionalsController (e2e)', () => {
       .get('/admin/professionals/validation-requests')
       .set('Authorization', `Bearer ${tokens.accessToken}`)
       .expect(403);
+  });
+
+  describe('Availabilities', () => {
+    it('POST /professionals/me/availabilities creates a new availability', async () => {
+      const professional = await createProfessionalUser();
+      const tokens = await login(professional.email);
+
+      const response = await request(context.app.getHttpServer())
+        .post('/professionals/me/availabilities')
+        .set('Authorization', `Bearer ${tokens.accessToken}`)
+        .send({
+          weekday: 1,
+          startTime: '08:00',
+          endTime: '12:00',
+          recurrence: RecurrenceType.WEEKLY,
+          slotDurationMinutes: 50,
+        })
+        .expect(201);
+
+      expect(response.body).toMatchObject({
+        professionalId: professional.id,
+        weekday: 1,
+        startTime: '08:00',
+        endTime: '12:00',
+        recurrence: RecurrenceType.WEEKLY,
+        slotDurationMinutes: 50,
+        isActive: true,
+      });
+      expect(response.body).toHaveProperty('id');
+    });
+
+    it('POST /professionals/me/availabilities returns 400 for endTime <= startTime', async () => {
+      const professional = await createProfessionalUser();
+      const tokens = await login(professional.email);
+
+      await request(context.app.getHttpServer())
+        .post('/professionals/me/availabilities')
+        .set('Authorization', `Bearer ${tokens.accessToken}`)
+        .send({
+          weekday: 2,
+          startTime: '14:00',
+          endTime: '12:00',
+          recurrence: RecurrenceType.WEEKLY,
+        })
+        .expect(400);
+    });
+
+    it('POST /professionals/me/availabilities returns 409 for overlapping availability', async () => {
+      const professional = await createProfessionalUser();
+      const tokens = await login(professional.email);
+
+      await request(context.app.getHttpServer())
+        .post('/professionals/me/availabilities')
+        .set('Authorization', `Bearer ${tokens.accessToken}`)
+        .send({
+          weekday: 3,
+          startTime: '08:00',
+          endTime: '12:00',
+          recurrence: RecurrenceType.WEEKLY,
+        })
+        .expect(201);
+
+      await request(context.app.getHttpServer())
+        .post('/professionals/me/availabilities')
+        .set('Authorization', `Bearer ${tokens.accessToken}`)
+        .send({
+          weekday: 3,
+          startTime: '10:00',
+          endTime: '14:00',
+          recurrence: RecurrenceType.WEEKLY,
+        })
+        .expect(409);
+    });
+
+    it('GET /professionals/me/availabilities lists own availabilities', async () => {
+      const professional = await createProfessionalUser();
+      const tokens = await login(professional.email);
+
+      await request(context.app.getHttpServer())
+        .post('/professionals/me/availabilities')
+        .set('Authorization', `Bearer ${tokens.accessToken}`)
+        .send({
+          weekday: 4,
+          startTime: '09:00',
+          endTime: '17:00',
+          recurrence: RecurrenceType.WEEKLY,
+        })
+        .expect(201);
+
+      const response = await request(context.app.getHttpServer())
+        .get('/professionals/me/availabilities')
+        .set('Authorization', `Bearer ${tokens.accessToken}`)
+        .expect(200);
+
+      expect(response.body).toHaveLength(1);
+      expect(response.body[0]).toMatchObject({
+        weekday: 4,
+        startTime: '09:00',
+        endTime: '17:00',
+        isActive: true,
+      });
+    });
+
+    it('GET /professionals/:userId/availabilities returns public availabilities', async () => {
+      const professional = await createProfessionalUser();
+      const tokens = await login(professional.email);
+
+      await request(context.app.getHttpServer())
+        .post('/professionals/me/availabilities')
+        .set('Authorization', `Bearer ${tokens.accessToken}`)
+        .send({
+          weekday: 5,
+          startTime: '08:00',
+          endTime: '12:00',
+          recurrence: RecurrenceType.WEEKLY,
+        })
+        .expect(201);
+
+      const response = await request(context.app.getHttpServer())
+        .get(`/professionals/${professional.id}/availabilities`)
+        .expect(200);
+
+      expect(response.body).toHaveLength(1);
+      expect(response.body[0]).toMatchObject({
+        professionalId: professional.id,
+        weekday: 5,
+        isActive: true,
+      });
+    });
+
+    it('GET /professionals/:userId/available-slots returns computed slots for a future date', async () => {
+      const professional = await createProfessionalUser();
+      const tokens = await login(professional.email);
+
+      await request(context.app.getHttpServer())
+        .post('/professionals/me/availabilities')
+        .set('Authorization', `Bearer ${tokens.accessToken}`)
+        .send({
+          weekday: 1,
+          startTime: '08:00',
+          endTime: '09:00',
+          recurrence: RecurrenceType.WEEKLY,
+          slotDurationMinutes: 30,
+        })
+        .expect(201);
+
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + ((1 + 7 - futureDate.getDay()) % 7 || 7));
+      const dateStr = futureDate.toISOString().slice(0, 10);
+
+      const response = await request(context.app.getHttpServer())
+        .get(`/professionals/${professional.id}/available-slots`)
+        .query({ date: dateStr })
+        .expect(200);
+
+      expect(response.body).toBeInstanceOf(Array);
+      for (const slot of response.body) {
+        expect(slot).toHaveProperty('startsAt');
+        expect(slot).toHaveProperty('endsAt');
+        expect(new Date(slot.startsAt) < new Date(slot.endsAt)).toBe(true);
+      }
+    });
+
+    it('GET /professionals/:userId/available-slots returns 400 for a past date', async () => {
+      const professional = await createProfessionalUser();
+
+      await request(context.app.getHttpServer())
+        .get(`/professionals/${professional.id}/available-slots`)
+        .query({ date: '2020-01-01' })
+        .expect(400);
+    });
+
+    it('GET /professionals/:userId/available-slots returns 400 for an invalid date', async () => {
+      const professional = await createProfessionalUser();
+
+      await request(context.app.getHttpServer())
+        .get(`/professionals/${professional.id}/available-slots`)
+        .query({ date: 'not-a-date' })
+        .expect(400);
+    });
+
+    it('PATCH /professionals/me/availabilities/:id updates an availability', async () => {
+      const professional = await createProfessionalUser();
+      const tokens = await login(professional.email);
+
+      const created = await request(context.app.getHttpServer())
+        .post('/professionals/me/availabilities')
+        .set('Authorization', `Bearer ${tokens.accessToken}`)
+        .send({
+          weekday: 3,
+          startTime: '08:00',
+          endTime: '12:00',
+          recurrence: RecurrenceType.WEEKLY,
+        })
+        .expect(201);
+
+      const response = await request(context.app.getHttpServer())
+        .patch(`/professionals/me/availabilities/${created.body.id}`)
+        .set('Authorization', `Bearer ${tokens.accessToken}`)
+        .send({
+          startTime: '09:00',
+          endTime: '13:00',
+          slotDurationMinutes: 60,
+        })
+        .expect(200);
+
+      expect(response.body).toMatchObject({
+        id: created.body.id,
+        startTime: '09:00',
+        endTime: '13:00',
+        slotDurationMinutes: 60,
+      });
+    });
+
+    it('PATCH /professionals/me/availabilities/:id returns 403 for non-owner', async () => {
+      const firstProfessional = await createProfessionalUser();
+      const secondProfessional = await createProfessionalUser();
+      const firstTokens = await login(firstProfessional.email);
+      const secondTokens = await login(secondProfessional.email);
+
+      const created = await request(context.app.getHttpServer())
+        .post('/professionals/me/availabilities')
+        .set('Authorization', `Bearer ${firstTokens.accessToken}`)
+        .send({
+          weekday: 3,
+          startTime: '08:00',
+          endTime: '12:00',
+          recurrence: RecurrenceType.WEEKLY,
+        })
+        .expect(201);
+
+      await request(context.app.getHttpServer())
+        .patch(`/professionals/me/availabilities/${created.body.id}`)
+        .set('Authorization', `Bearer ${secondTokens.accessToken}`)
+        .send({ startTime: '10:00' })
+        .expect(403);
+    });
+
+    it('DELETE /professionals/me/availabilities/:id soft-deletes an availability', async () => {
+      const professional = await createProfessionalUser();
+      const tokens = await login(professional.email);
+
+      const created = await request(context.app.getHttpServer())
+        .post('/professionals/me/availabilities')
+        .set('Authorization', `Bearer ${tokens.accessToken}`)
+        .send({
+          weekday: 4,
+          startTime: '08:00',
+          endTime: '12:00',
+          recurrence: RecurrenceType.WEEKLY,
+        })
+        .expect(201);
+
+      const response = await request(context.app.getHttpServer())
+        .delete(`/professionals/me/availabilities/${created.body.id}`)
+        .set('Authorization', `Bearer ${tokens.accessToken}`)
+        .expect(200);
+
+      expect(response.body).toMatchObject({
+        id: created.body.id,
+        isActive: false,
+      });
+    });
+
+    it('DELETE /professionals/me/availabilities/:id returns 403 for non-owner', async () => {
+      const firstProfessional = await createProfessionalUser();
+      const secondProfessional = await createProfessionalUser();
+      const firstTokens = await login(firstProfessional.email);
+      const secondTokens = await login(secondProfessional.email);
+
+      const created = await request(context.app.getHttpServer())
+        .post('/professionals/me/availabilities')
+        .set('Authorization', `Bearer ${firstTokens.accessToken}`)
+        .send({
+          weekday: 5,
+          startTime: '08:00',
+          endTime: '12:00',
+          recurrence: RecurrenceType.WEEKLY,
+        })
+        .expect(201);
+
+      await request(context.app.getHttpServer())
+        .delete(`/professionals/me/availabilities/${created.body.id}`)
+        .set('Authorization', `Bearer ${secondTokens.accessToken}`)
+        .expect(403);
+    });
   });
 });
