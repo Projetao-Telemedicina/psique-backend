@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { SchedulerRegistry } from '@nestjs/schedule';
+import { AppointmentModule } from '@/appointment/appointment.module';
 import { AuthModule } from '@/auth/auth.module';
+import { PanicButtonAppointmentsService } from './panic-button-appointments.service';
 import { PanicButtonController } from './panic-button.controller';
 import { PanicButtonDispatchService } from './panic-button-dispatch.service';
 import { PanicButtonDomainEventsHandler } from './panic-button-domain-events.handler';
@@ -16,10 +18,11 @@ import { PanicButtonProfessionalRepository } from './repositories/panic-button-p
 import { PanicButtonRequestRepository } from './repositories/panic-button-request.repository';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, AppointmentModule],
   controllers: [PanicButtonController],
   providers: [
     SchedulerRegistry,
+    PanicButtonAppointmentsService,
     PanicButtonService,
     PanicButtonOffersService,
     PanicButtonDispatchService,

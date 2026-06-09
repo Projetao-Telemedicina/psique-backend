@@ -119,6 +119,13 @@ describe('PanicButtonController (e2e)', () => {
       status: 'PENDING',
       attemptNumber: 1,
     });
+    expect(persistedRequest.appointment).toMatchObject({
+      patientId: persistedRequest.patientId,
+      professionalId: professional.id,
+      emergencyRequestId: persistedRequest.id,
+      status: 'SCHEDULED',
+      priceCents: 0,
+    });
   });
 
   it('GET /panic/me/active retorna o acionamento ativo do paciente', async () => {
@@ -183,6 +190,13 @@ describe('PanicButtonController (e2e)', () => {
     );
     expect(persistedRequest.status).toBe('MATCHED');
     expect(persistedRequest.matchedProfessionalId).toBe(professional.id);
+    expect(persistedRequest.appointment).toMatchObject({
+      patientId: persistedRequest.patientId,
+      professionalId: professional.id,
+      emergencyRequestId: persistedRequest.id,
+      status: 'SCHEDULED',
+      priceCents: 0,
+    });
 
     const persistedProfessional =
       await context.prisma.professionalProfile.findUniqueOrThrow({
@@ -240,6 +254,22 @@ describe('PanicButtonController (e2e)', () => {
       status: 'PENDING',
       attemptNumber: 2,
     });
+    expect(persistedRequest.appointment).toMatchObject({
+      patientId: persistedRequest.patientId,
+      professionalId: secondProfessional.professional.id,
+      emergencyRequestId: persistedRequest.id,
+      status: 'SCHEDULED',
+      priceCents: 0,
+    });
+
+    const deletedPreviousAppointment = await context.prisma.appointment.findFirst({
+      where: {
+        emergencyRequestId: created.body.id,
+        professionalId: firstProfessional.professional.id,
+      },
+    });
+
+    expect(deletedPreviousAppointment).toBeNull();
   });
 
   it('mantem o acionamento em SEARCHING quando nao ha profissional disponivel', async () => {

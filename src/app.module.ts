@@ -16,6 +16,7 @@ import { DiaryModule } from './diary/diary.module';
 import { MatchingModule } from './matching/matching.module';
 import { ReviewModule } from './review/review.module';
 import { PanicButtonModule } from './emergency/panic-button.module';
+import { ChatModule } from './chat/chat.module';
 import { CouponsModule } from './coupons/coupons.module';
 
 @Module({
@@ -35,7 +36,8 @@ import { CouponsModule } from './coupons/coupons.module';
     MatchingModule,
     ReviewModule,
     PanicButtonModule,
-    CouponsModule,
+    ChatModule,
+    CouponsModule
   ],
   controllers: [AppController],
   providers: [AppService],
