@@ -157,7 +157,9 @@ describe('CouponsService', () => {
         'user-001', 'uc-001', 10000, 'SINGLE_APPOINTMENT',
       );
 
-      expect(result.totalCents).toBe(8000); // 20% de 10000 = 2000
+      expect(result.finalAmountCents).toBe(8000); // 20% de 10000 = 2000
+      expect(result.message).toBe('Desconto aplicado');
+      expect(result.couponStatus).toBe('applied');
     });
 
     it('deve rejeitar cupom expirado com mensagem exata', async () => {
@@ -186,10 +188,12 @@ describe('CouponsService', () => {
       const result = await service.applyCoupon('user-001', 'uc-001', 20000, 'SINGLE_APPOINTMENT');
 
       expect(result).toEqual({
-        subtotalCents: 20000,
-        discountCents: 4000,
-        totalCents: 16000,
+        originalAmountCents: 20000,
+        discountAppliedCents: 4000,
+        finalAmountCents: 16000,
         couponCode: 'PSIQUE-BEMVINDO',
+        message: 'Desconto aplicado',
+        couponStatus: 'applied',
         warning: null,
       });
     });
@@ -203,8 +207,10 @@ describe('CouponsService', () => {
 
       const result = await service.applyCoupon('user-001', 'uc-001', 5000, 'SINGLE_APPOINTMENT');
 
-      expect(result.totalCents).toBe(0);
-      expect(result.discountCents).toBe(5000);
+      expect(result.finalAmountCents).toBe(0);
+      expect(result.discountAppliedCents).toBe(5000);
+      expect(result.message).toBe('Desconto aplicado');
+      expect(result.couponStatus).toBe('applied');
     });
 
     it('deve retornar aviso firstMonthOnly', async () => {
@@ -223,6 +229,23 @@ describe('CouponsService', () => {
       );
 
       expect(result.warning).toBe('Desconto aplicado apenas para o primeiro mês');
+    });
+
+    it('deve ser idempotente — chamadas repetidas retornam o mesmo resultado', async () => {
+      mockFindUnique.mockResolvedValue(mockUserCoupon());
+
+      const result1 = await service.applyCoupon(
+        'user-001', 'uc-001', 20000, 'SINGLE_APPOINTMENT',
+      );
+      const result2 = await service.applyCoupon(
+        'user-001', 'uc-001', 20000, 'SINGLE_APPOINTMENT',
+      );
+
+      expect(result1).toEqual(result2);
+      expect(result1.originalAmountCents).toBe(20000);
+      expect(result1.discountAppliedCents).toBe(4000);
+      expect(result1.finalAmountCents).toBe(16000);
+      expect(result1.couponStatus).toBe('applied');
     });
   });
 

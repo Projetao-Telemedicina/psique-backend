@@ -8,10 +8,12 @@ import { UpdateCouponDto } from './dto/update-coupon.dto';
 const DEFAULT_MAX_DISCOUNT_CENTS = 10000;
 
 export interface ApplyCouponResult {
-  subtotalCents: number;
-  discountCents: number;
-  totalCents: number;
+  originalAmountCents: number;
+  discountAppliedCents: number;
+  finalAmountCents: number;
   couponCode: string;
+  message: string;
+  couponStatus: string;
   warning: string | null;
 }
 
@@ -168,10 +170,12 @@ export class CouponsService {
     );
 
     return {
-      subtotalCents: amountCents,
-      discountCents,
-      totalCents: amountCents - discountCents,
+      originalAmountCents: amountCents,
+      discountAppliedCents: discountCents,
+      finalAmountCents: amountCents - discountCents,
       couponCode: userCoupon.coupon.code,
+      message: 'Desconto aplicado',
+      couponStatus: 'applied',
       warning,
     };
   }

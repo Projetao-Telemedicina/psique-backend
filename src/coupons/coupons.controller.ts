@@ -19,6 +19,19 @@ import { CreateCouponDto } from './dto/create-coupon.dto';
 import { UpdateCouponDto } from './dto/update-coupon.dto';
 import { ApplyCouponDto } from './dto/apply-coupon.dto';
 import { DistributeCouponDto } from './dto/distribute-coupon.dto';
+import {
+  ApplyCouponApiDocs,
+  ClaimCouponApiDocs,
+  CouponsApiTags,
+  CreateCouponApiDocs,
+  DistributeCouponApiDocs,
+  GetAllCouponsApiDocs,
+  GetCouponByIdApiDocs,
+  ListMyCouponsApiDocs,
+  RemoveCouponApiDocs,
+  ReserveCouponApiDocs,
+  UpdateCouponApiDocs,
+} from './swagger/index';
 
 type AuthenticatedRequest = {
   user: {
@@ -27,6 +40,7 @@ type AuthenticatedRequest = {
   };
 };
 
+@CouponsApiTags()
 @Controller('coupons')
 export class CouponsController {
   constructor(private readonly couponsService: CouponsService) {}
@@ -34,6 +48,7 @@ export class CouponsController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
+  @CreateCouponApiDocs()
   create(@Body() dto: CreateCouponDto) {
     return this.couponsService.create(dto);
   }
@@ -41,6 +56,7 @@ export class CouponsController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
+  @GetAllCouponsApiDocs()
   findAll() {
     return this.couponsService.getAll();
   }
@@ -48,6 +64,7 @@ export class CouponsController {
   @Get('mine')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.PATIENT)
+  @ListMyCouponsApiDocs()
   listMyCoupons(@Req() request: AuthenticatedRequest) {
     return this.couponsService.listMyCoupons(request.user.id);
   }
@@ -55,6 +72,7 @@ export class CouponsController {
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
+  @GetCouponByIdApiDocs()
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.couponsService.getById(id);
   }
@@ -62,6 +80,7 @@ export class CouponsController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
+  @UpdateCouponApiDocs()
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateCouponDto,
@@ -72,6 +91,7 @@ export class CouponsController {
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
+  @RemoveCouponApiDocs()
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.couponsService.remove(id);
   }
@@ -79,6 +99,7 @@ export class CouponsController {
   @Post('apply')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.PATIENT)
+  @ApplyCouponApiDocs()
   apply(
     @Body() dto: ApplyCouponDto,
     @Req() request: AuthenticatedRequest,
@@ -94,6 +115,7 @@ export class CouponsController {
   @Post(':id/claim')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.PATIENT)
+  @ClaimCouponApiDocs()
   claim(
     @Param('id', ParseUUIDPipe) id: string,
     @Req() request: AuthenticatedRequest,
@@ -104,6 +126,7 @@ export class CouponsController {
   @Post(':id/distribute')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
+  @DistributeCouponApiDocs()
   distribute(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: DistributeCouponDto,
@@ -114,6 +137,7 @@ export class CouponsController {
   @Post(':id/reserve')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.PATIENT)
+  @ReserveCouponApiDocs()
   reserve(
     @Param('id', ParseUUIDPipe) id: string,
     @Req() request: AuthenticatedRequest,
