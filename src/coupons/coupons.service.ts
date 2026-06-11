@@ -338,7 +338,7 @@ export class CouponsService {
   }
 
   async distributeCoupon(couponId: string, targetUserId: string) {
-    const coupon = await this.getById(couponId);
+    await this.getById(couponId);
 
     return this.prisma.userCoupon.create({
       data: {

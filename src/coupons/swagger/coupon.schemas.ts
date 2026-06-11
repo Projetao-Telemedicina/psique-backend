@@ -130,7 +130,7 @@ export const distributeCouponResponseSchema = {
     couponId: uuidSchema('c0a80121-0001-4000-8000-123456789012'),
     userId: uuidSchema('f0a80121-0001-4000-8000-222222222222'),
     claimedAt: dateTimeSchema('2026-03-01T12:00:00.000Z'),
-    usedAt: nullableDateTimeSchema(null),
+    usedAt: nullableDateTimeSchema(),
     isUsed: { type: 'boolean', example: false },
     reservedAt: { type: 'string', format: 'date-time', nullable: true, example: null },
   },
