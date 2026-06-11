@@ -17,6 +17,7 @@ import { MatchingModule } from './matching/matching.module';
 import { ReviewModule } from './review/review.module';
 import { PanicButtonModule } from './emergency/panic-button.module';
 import { ChatModule } from './chat/chat.module';
+import { CouponsModule } from './coupons/coupons.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { ChatModule } from './chat/chat.module';
     ReviewModule,
     PanicButtonModule,
     ChatModule,
+    CouponsModule
   ],
   controllers: [AppController],
   providers: [AppService],

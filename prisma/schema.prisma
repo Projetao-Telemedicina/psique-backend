@@ -117,15 +117,20 @@ enum MessageType {
   SYSTEM
 }
 
-// enum CouponCategory {
-//   SINGLE_APPOINTMENT
-//   PLAN_SUBSCRIPTION
-// }
+enum CouponCategory {
+  SINGLE_APPOINTMENT
+  PLAN_SUBSCRIPTION
+}
 
-// enum CouponDiscountType {
-//   PERCENTAGE
-//   FIXED
-// }
+enum CouponDiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum CouponDistributionType {
+  PUBLIC
+  TARGETED
+}
 
 // enum WalletTransactionType {
 //   REFUND_CREDIT
@@ -235,7 +240,7 @@ model User {
   // paymentMethods                PaymentMethod[]
   // subscriptions                 Subscription[]
   // payments                      Payment[]
-  // userCoupons                   UserCoupon[]
+  userCoupons                   UserCoupon[]
   // notifications                 Notification[]
 
   @@map("users")
@@ -569,38 +574,47 @@ model MessageAttachment {
   @@map("message_attachments")
 }
 
-// model Coupon {
-//   id               String             @id @default(uuid()) @map("coupon_id")
-//   code             String             @unique
-//   title            String
-//   description      String?
-//   category         CouponCategory
-//   discountType     CouponDiscountType @map("discount_type")
-//   discountValue    Decimal            @db.Decimal(10, 2) @map("discount_value")
-//   maxDiscountCents Int?               @map("max_discount_cents")
-//   expiresAt        DateTime           @map("expires_at")
-//   isActive         Boolean            @default(true) @map("is_active")
-//   createdAt        DateTime           @default(now()) @map("created_at")
+model Coupon {
+  id                  String                 @id @default(uuid()) @map("coupon_id")
+  code                String                 @unique
+  title               String
+  description         String?
+  category            CouponCategory
+  discountType        CouponDiscountType     @map("discount_type")
+  discountValue       Decimal                @db.Decimal(10, 2) @map("discount_value")
+  maxDiscountCents    Int?                   @map("max_discount_cents")  // teto de desconto para PERCENTAGE
+  minPurchaseCents    Int?                   @map("min_purchase_cents")  // valor mínimo para aplicar
+  maxUses             Int?                   @map("max_uses")            // null = ilimitado
+  currentUses         Int                    @default(0) @map("current_uses")
+  maxUsesPerUser      Int                    @default(1) @map("max_uses_per_user")
+  distributionType    CouponDistributionType @default(PUBLIC) @map("distribution_type")
+  firstMonthOnly      Boolean                @default(false) @map("first_month_only") // aviso de "apenas primeiro mês"
+  expiresAt           DateTime               @map("expires_at")
+  isActive            Boolean                @default(true) @map("is_active")
+  createdAt           DateTime               @default(now()) @map("created_at")
+  updatedAt           DateTime               @updatedAt @map("updated_at")
 
-//   userCoupons UserCoupon[]
+  userCoupons UserCoupon[]
 
-//   @@map("coupons")
-// }
+  @@map("coupons")
+}
 
-// model UserCoupon {
-//   id        String   @id @default(uuid()) @map("user_coupon_id")
-//   couponId  String   @map("coupon_id")
-//   userId    String   @map("user_id")
-//   claimedAt DateTime @default(now()) @map("claimed_at")
-//   usedAt    DateTime? @map("used_at")
-//   isUsed    Boolean  @default(false) @map("is_used")
+model UserCoupon {
+  id         String    @id @default(uuid()) @map("user_coupon_id")
+  couponId   String    @map("coupon_id")
+  userId     String    @map("user_id")
+  claimedAt  DateTime  @default(now()) @map("claimed_at")
+  usedAt     DateTime? @map("used_at")
+  isUsed     Boolean   @default(false) @map("is_used")
+  reservedAt DateTime? @map("reserved_at")
 
-//   coupon   Coupon    @relation(fields: [couponId], references: [id])
-//   user     User      @relation(fields: [userId], references: [id])
-//   payments Payment[]
+  coupon   Coupon    @relation(fields: [couponId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
+  // payments Payment[]
 
-//   @@map("user_coupons")
-// }
+  @@unique([couponId, userId]) // evita duplicata de distribuição do mesmo cupom para o mesmo usuário
+  @@map("user_coupons")
+}
 
 // model Wallet {
 //   id           String   @id @default(uuid()) @map("wallet_id")
