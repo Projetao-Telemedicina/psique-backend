@@ -23,8 +23,6 @@ describe('CouponsController (e2e)', () => {
   });
 
   beforeEach(async () => {
-    await context.prisma.userCoupon.deleteMany();
-    await context.prisma.coupon.deleteMany();
     await resetDatabase(context.prisma);
     jest.clearAllMocks();
   });
@@ -757,10 +755,8 @@ describe('CouponsController (e2e)', () => {
         .expect(201);
 
       const couponId = createResponse.body.id;
-
       // 2. Paciente resgata cupom publico
-      const { patient, token: patientToken } = await createPatientSession();
-
+      const { token: patientToken } = await createPatientSession();
       const claimResponse = await request(context.app.getHttpServer())
         .post(`/coupons/${couponId}/claim`)
         .set('Authorization', `Bearer ${patientToken}`)
