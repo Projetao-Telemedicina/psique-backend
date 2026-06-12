@@ -5,7 +5,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
-  NotFoundException
+  NotFoundException,
 } from '@nestjs/common';
 import { AppointmentCanceledBy, AppointmentStatus, Prisma, Role } from '@prisma/client';
 import { CertificateService } from './certificate/certificate.service';
@@ -13,6 +13,26 @@ import { CanJoinResponseDto } from './dto/can-join-appointment.dto';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
+
+export interface CreatePendingAppointmentInput {
+  patientId: string;
+  professionalId: string;
+  startsAt: string;
+  endsAt: string;
+  priceCents?: number;
+}
+
+type PreparedAppointmentInput = {
+  patientId: string;
+  professionalId: string;
+  startsAt: Date;
+  endsAt: Date;
+  priceCents: number;
+  patientName: string;
+  patientEmail: string;
+  professionalName: string;
+  professionalEmail: string;
+};
 
 @Injectable()
 export class AppointmentService {
@@ -23,66 +43,88 @@ export class AppointmentService {
   ) {}
 
   async create(createAppointmentDto: CreateAppointmentDto) {
-    if (!createAppointmentDto.patientId) {
-      throw new BadRequestException('O ID do paciente é obrigatório para agendar a consulta.');
-    }
+    const prepared = await this.prepareAppointmentInput({
+      patientId: createAppointmentDto.patientId ?? '',
+      professionalId: createAppointmentDto.professionalId,
+      startsAt: createAppointmentDto.startsAt,
+      endsAt: createAppointmentDto.endsAt,
+      priceCents: createAppointmentDto.priceCents,
+    });
 
-    const startsAt = new Date(createAppointmentDto.startsAt);
-    const endsAt = new Date(createAppointmentDto.endsAt);
+    const calendarEvent = await this.googleCalendar.createAppointmentEvent({
+      patientName: prepared.patientName,
+      patientEmail: prepared.patientEmail,
+      professionalName: prepared.professionalName,
+      professionalEmail: prepared.professionalEmail,
+      startsAt: prepared.startsAt,
+      endsAt: prepared.endsAt,
+      requestId: crypto.randomUUID(),
+    });
 
-    if (endsAt <= startsAt) {
-      throw new BadRequestException('A data de término deve ser posterior à data de início.');
-    }
+    return this.prisma.appointment.create({
+      data: {
+        professionalId: prepared.professionalId,
+        patientId: prepared.patientId,
+        startsAt: prepared.startsAt,
+        endsAt: prepared.endsAt,
+        priceCents: prepared.priceCents,
+        confirmedAt: new Date(),
+        googleCalendarEventId: calendarEvent.eventId,
+        meetLink: calendarEvent.meetLink,
+      },
+    });
+  }
 
-    const patientHaveAppointment = await this.prisma.appointment.findFirst({
-      where: {
-          patientId: createAppointmentDto.patientId,
-        status: {
-          in: [
-            AppointmentStatus.SCHEDULED,
-            AppointmentStatus.RESCHEDULE_REQUESTED
-          ],
-        },
-        startsAt: { lt: endsAt },
-        endsAt: { gt: startsAt },
+  async createPendingAppointment(input: CreatePendingAppointmentInput) {
+    const prepared = await this.prepareAppointmentInput(input);
+
+    return this.prisma.appointment.create({
+      data: {
+        professionalId: prepared.professionalId,
+        patientId: prepared.patientId,
+        startsAt: prepared.startsAt,
+        endsAt: prepared.endsAt,
+        priceCents: prepared.priceCents,
+      },
+    });
+  }
+
+  async confirmPendingAppointment(id: string) {
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        patientId: true,
+        professionalId: true,
+        startsAt: true,
+        endsAt: true,
+        priceCents: true,
+        status: true,
+        confirmedAt: true,
+        googleCalendarEventId: true,
+        meetLink: true,
       },
     });
 
-    if (patientHaveAppointment) {
-      throw new ConflictException('O paciente já possui uma consulta marcada no mesmo horário ou está reagendando uma consulta nesse horário.');
+    if (!appointment) {
+      throw new NotFoundException('Consulta não encontrada.');
     }
 
-    const conflictAppointment = await this.prisma.appointment.findFirst({
-      where: {
-        professionalId: createAppointmentDto.professionalId,
-        status: {
-          in: [
-            AppointmentStatus.SCHEDULED,
-            AppointmentStatus.RESCHEDULE_REQUESTED
-          ],
-        },
-        startsAt: { lt: endsAt },
-        endsAt: { gt: startsAt },
-      },
-    });
-
-    if (conflictAppointment) {
-      throw new ConflictException('O profissional possui uma consulta no mesmo horário.');
+    if (appointment.status === AppointmentStatus.CANCELED) {
+      throw new BadRequestException('Esta consulta já foi cancelada.');
     }
 
-    const price = createAppointmentDto.priceCents ?? 0;
-
-    if (price < 0) {
-      throw new BadRequestException('O preço não pode ser negativo.');
+    if (appointment.confirmedAt && appointment.googleCalendarEventId && appointment.meetLink) {
+      return appointment;
     }
 
     const [patient, professional] = await Promise.all([
       this.prisma.user.findUnique({
-        where: { id: createAppointmentDto.patientId },
+        where: { id: appointment.patientId },
         select: { name: true, email: true },
       }),
       this.prisma.user.findUnique({
-        where: { id: createAppointmentDto.professionalId },
+        where: { id: appointment.professionalId },
         select: { name: true, email: true },
       }),
     ]);
@@ -96,22 +138,54 @@ export class AppointmentService {
       patientEmail: patient.email,
       professionalName: professional.name,
       professionalEmail: professional.email,
-      startsAt,
-      endsAt,
+      startsAt: appointment.startsAt,
+      endsAt: appointment.endsAt,
       requestId: crypto.randomUUID(),
     });
 
-    return this.prisma.appointment.create({
+    return this.prisma.appointment.update({
+      where: { id },
       data: {
-        professionalId: createAppointmentDto.professionalId,
-        patientId: createAppointmentDto.patientId,
-        startsAt,
-        endsAt,
-        priceCents: price,
+        confirmedAt: appointment.confirmedAt ?? new Date(),
         googleCalendarEventId: calendarEvent.eventId,
         meetLink: calendarEvent.meetLink,
       },
     });
+  }
+
+  async cancelPendingAppointment(id: string, reason: string) {
+    const appointment = await this.prisma.appointment.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        status: true,
+        googleCalendarEventId: true,
+      },
+    });
+
+    if (!appointment) {
+      throw new NotFoundException('Consulta não encontrada.');
+    }
+
+    if (appointment.status === AppointmentStatus.CANCELED) {
+      return this.prisma.appointment.findUnique({ where: { id } });
+    }
+
+    const updatedAppointment = await this.prisma.appointment.update({
+      where: { id },
+      data: {
+        status: AppointmentStatus.CANCELED,
+        canceledBy: AppointmentCanceledBy.SYSTEM,
+        cancellationReason: reason,
+        canceledAt: new Date(),
+      },
+    });
+
+    if (appointment.googleCalendarEventId) {
+      await this.googleCalendar.deleteAppointmentEvent(appointment.googleCalendarEventId);
+    }
+
+    return updatedAppointment;
   }
 
   async getAll(status?: AppointmentStatus) {
@@ -367,14 +441,10 @@ export class AppointmentService {
   async canJoinAppointment(id: string, userId: string): Promise<CanJoinResponseDto> {
     const appointment = await this.getById(id);
 
-    const isParticipant =
-      appointment.patientId === userId ||
-      appointment.professionalId === userId;
+    const isParticipant = appointment.patientId === userId || appointment.professionalId === userId;
 
     if (!isParticipant) {
-      throw new ForbiddenException(
-        'Você não tem permissão para acessar esta consulta.',
-      );
+      throw new ForbiddenException('Você não tem permissão para acessar esta consulta.');
     }
 
     const activeStatuses: AppointmentStatus[] = [
@@ -383,27 +453,21 @@ export class AppointmentService {
     ];
 
     if (!activeStatuses.includes(appointment.status)) {
-      throw new BadRequestException(
-        'Esta consulta não está disponível para acesso.',
-      );
+      throw new BadRequestException('Esta consulta não está disponível para acesso.');
     }
 
     if (!appointment.meetLink) {
-      throw new BadRequestException(
-        'Esta consulta não possui link de videoconferência.',
-      );
+      throw new BadRequestException('Esta consulta não possui link de videoconferência.');
     }
 
     const now = new Date();
     const startsAt = new Date(appointment.startsAt);
     const endsAt = new Date(appointment.endsAt);
 
-    const JOIN_TOLERANCE_MS = 10 * 60 * 1000;
-    const earliestJoinTime = new Date(startsAt.getTime() - JOIN_TOLERANCE_MS);
+    const joinToleranceMs = 10 * 60 * 1000;
+    const earliestJoinTime = new Date(startsAt.getTime() - joinToleranceMs);
 
-    const minutesUntilStart = Math.round(
-      (startsAt.getTime() - now.getTime()) / (1000 * 60),
-    );
+    const minutesUntilStart = Math.round((startsAt.getTime() - now.getTime()) / (1000 * 60));
 
     if (now < earliestJoinTime) {
       throw new BadRequestException(
@@ -412,9 +476,7 @@ export class AppointmentService {
     }
 
     if (now > endsAt) {
-      throw new BadRequestException(
-        'O horário desta consulta já foi encerrado.',
-      );
+      throw new BadRequestException('O horário desta consulta já foi encerrado.');
     }
 
     return {
@@ -483,20 +545,14 @@ export class AppointmentService {
       throw new NotFoundException('Consulta não encontrada.');
     }
 
-    const isParticipant =
-      appointment.patientId === userId ||
-      appointment.professionalId === userId;
+    const isParticipant = appointment.patientId === userId || appointment.professionalId === userId;
 
     if (!isParticipant) {
-      throw new ForbiddenException(
-        'Você não tem permissão para acessar este certificado.',
-      );
+      throw new ForbiddenException('Você não tem permissão para acessar este certificado.');
     }
 
     if (appointment.status !== AppointmentStatus.COMPLETED) {
-      throw new BadRequestException(
-        'O certificado só está disponível para consultas concluídas.',
-      );
+      throw new BadRequestException('O certificado só está disponível para consultas concluídas.');
     }
 
     return this.certificate.generateAttendanceCertificate({
@@ -509,5 +565,85 @@ export class AppointmentService {
       endsAt: appointment.endsAt,
       completedAt: appointment.completedAt!,
     });
+  }
+
+  private async prepareAppointmentInput(
+    input: CreatePendingAppointmentInput,
+  ): Promise<PreparedAppointmentInput> {
+    if (!input.patientId) {
+      throw new BadRequestException('O ID do paciente é obrigatório para agendar a consulta.');
+    }
+
+    const startsAt = new Date(input.startsAt);
+    const endsAt = new Date(input.endsAt);
+
+    if (endsAt <= startsAt) {
+      throw new BadRequestException('A data de término deve ser posterior à data de início.');
+    }
+
+    const patientHaveAppointment = await this.prisma.appointment.findFirst({
+      where: {
+        patientId: input.patientId,
+        status: {
+          in: [AppointmentStatus.SCHEDULED, AppointmentStatus.RESCHEDULE_REQUESTED],
+        },
+        startsAt: { lt: endsAt },
+        endsAt: { gt: startsAt },
+      },
+    });
+
+    if (patientHaveAppointment) {
+      throw new ConflictException(
+        'O paciente já possui uma consulta marcada no mesmo horário ou está reagendando uma consulta nesse horário.',
+      );
+    }
+
+    const conflictAppointment = await this.prisma.appointment.findFirst({
+      where: {
+        professionalId: input.professionalId,
+        status: {
+          in: [AppointmentStatus.SCHEDULED, AppointmentStatus.RESCHEDULE_REQUESTED],
+        },
+        startsAt: { lt: endsAt },
+        endsAt: { gt: startsAt },
+      },
+    });
+
+    if (conflictAppointment) {
+      throw new ConflictException('O profissional possui uma consulta no mesmo horário.');
+    }
+
+    const priceCents = input.priceCents ?? 0;
+
+    if (priceCents < 0) {
+      throw new BadRequestException('O preço não pode ser negativo.');
+    }
+
+    const [patient, professional] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: input.patientId },
+        select: { name: true, email: true },
+      }),
+      this.prisma.user.findUnique({
+        where: { id: input.professionalId },
+        select: { name: true, email: true },
+      }),
+    ]);
+
+    if (!patient || !professional) {
+      throw new NotFoundException('Paciente ou profissional não encontrado.');
+    }
+
+    return {
+      patientId: input.patientId,
+      professionalId: input.professionalId,
+      startsAt,
+      endsAt,
+      priceCents,
+      patientName: patient.name,
+      patientEmail: patient.email,
+      professionalName: professional.name,
+      professionalEmail: professional.email,
+    };
   }
 }
