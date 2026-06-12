@@ -127,7 +127,7 @@ function setupApiDocumentation(
 async function bootstrap() {
   loadEnvironment();
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
 
   app.enableCors();
 
