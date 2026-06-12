@@ -5,11 +5,6 @@ from matching_engine import recomendar
 
 app = FastAPI(title="Psique Matching Service", version="1.0.0")
 
-
-# =========================================================
-# Pydantic models — contrato NestJS ↔ Python
-# =========================================================
-
 class PatientPayload(BaseModel):
     motivo_terapia: int = Field(..., ge=0, le=5)
     abordagem: int = Field(..., ge=0, le=5)
@@ -56,11 +51,6 @@ class MatchResponseItem(BaseModel):
 
 class MatchResponse(BaseModel):
     recommendations: list[MatchResponseItem]
-
-
-# =========================================================
-# Endpoints
-# =========================================================
 
 @app.get("/health")
 def health():
