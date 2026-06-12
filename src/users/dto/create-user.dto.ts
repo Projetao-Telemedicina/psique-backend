@@ -97,7 +97,7 @@ export class CreateUserDto {
   cep?: string;
 
   @IsOptional()
-  @Transform(({ value }) =>
+  @Transform(({ value }: { value: unknown }): unknown =>
     typeof value === 'string' ? value.toUpperCase().trim() : value,
   )
   @IsIn(BRAZILIAN_STATES, {
