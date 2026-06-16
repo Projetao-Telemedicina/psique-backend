@@ -17,6 +17,7 @@ const paymentStatusValues = [
 
 const paymentMethodTypeValues = ['CARD', 'PIX', 'BOLETO', 'WALLET'];
 const planBillingCycleValues = ['MONTHLY', 'YEARLY'];
+const promotionStatusValues = ['PENDING', 'ACTIVE', 'EXPIRED', 'CANCELED', 'FAILED'];
 const subscriptionStatusValues = [
   'PENDING',
   'ACTIVE',
@@ -139,6 +140,7 @@ export const paymentResponseSchema = {
     },
     appointmentId: nullableUuidSchema('a97b7a87-2670-4b73-b223-2269b4c43f3a'),
     subscriptionId: nullableUuidSchema('4e4ff9ff-95e0-47c3-93a0-f5546af13e2f'),
+    promotionId: nullableUuidSchema('4f2aeb25-0c9f-48ba-b605-2c87f225cb1d'),
     userCouponId: nullableUuidSchema('d0a80121-0001-4000-8000-987654321012'),
     originalAmountCents: {
       type: 'integer',
@@ -344,6 +346,134 @@ export const planListResponseSchema = {
   items: planResponseSchema,
 };
 
+export const createPromotionPlanRequestSchema = {
+  type: 'object',
+  properties: {
+    name: {
+      type: 'string',
+      example: 'Impulsionamento 7 dias',
+    },
+    description: {
+      type: 'string',
+      example: 'Destaca o perfil do psicólogo na listagem pública por 7 dias.',
+      nullable: true,
+    },
+    priceCents: {
+      type: 'integer',
+      minimum: 0,
+      example: 2990,
+    },
+    durationDays: {
+      type: 'integer',
+      minimum: 1,
+      example: 7,
+    },
+  },
+  required: ['name', 'priceCents', 'durationDays'],
+};
+
+export const promotionPlanResponseSchema = {
+  type: 'object',
+  properties: {
+    id: uuidSchema('cbf2f924-f8d2-42b4-b07d-5c0d7e28d9f3'),
+    name: {
+      type: 'string',
+      example: 'Impulsionamento 7 dias',
+    },
+    description: nullableStringSchema(
+      'Destaca o perfil do psicólogo na listagem pública por 7 dias.',
+    ),
+    priceCents: {
+      type: 'integer',
+      example: 2990,
+    },
+    durationDays: {
+      type: 'integer',
+      example: 7,
+    },
+    isActive: {
+      type: 'boolean',
+      example: true,
+    },
+    createdAt: dateTimeSchema('2026-06-16T10:30:00.000Z'),
+    updatedAt: dateTimeSchema('2026-06-16T10:30:00.000Z'),
+  },
+  required: [
+    'id',
+    'name',
+    'priceCents',
+    'durationDays',
+    'isActive',
+    'createdAt',
+    'updatedAt',
+  ],
+};
+
+export const promotionPlanListResponseSchema = {
+  type: 'array',
+  items: promotionPlanResponseSchema,
+};
+
+export const checkoutPromotionRequestSchema = {
+  type: 'object',
+  properties: {
+    promotionPlanId: uuidSchema('cbf2f924-f8d2-42b4-b07d-5c0d7e28d9f3'),
+    paymentMethodId: uuidSchema('a95d0c83-31c2-4d15-b06c-d11fa1c2e5f4'),
+  },
+  required: ['promotionPlanId', 'paymentMethodId'],
+};
+
+export const checkoutPromotionResponseSchema = {
+  type: 'object',
+  properties: {
+    id: uuidSchema('d28d2d90-f6c3-4f35-9ec4-55ff49540d2a'),
+    promotionId: nullableUuidSchema('4f2aeb25-0c9f-48ba-b605-2c87f225cb1d'),
+    status: {
+      type: 'string',
+      enum: paymentStatusValues,
+      example: 'APPROVED',
+    },
+    originalAmountCents: {
+      type: 'integer',
+      example: 2990,
+    },
+    discountAmountCents: {
+      type: 'integer',
+      example: 0,
+    },
+    finalAmountCents: {
+      type: 'integer',
+      example: 2990,
+    },
+    gatewayTransactionId: nullableStringSchema('pi_123456789'),
+    paidAt: nullableDateTimeSchema('2026-06-16T10:35:00.000Z'),
+    clientSecret: {
+      type: 'string',
+      example: 'pi_123456789_secret_abc',
+      nullable: true,
+    },
+    startsAt: nullableDateTimeSchema('2026-06-16T10:35:00.000Z'),
+    endsAt: nullableDateTimeSchema('2026-06-23T10:35:00.000Z'),
+    promotionActivated: {
+      type: 'boolean',
+      example: true,
+    },
+    isPromoted: {
+      type: 'boolean',
+      example: true,
+    },
+  },
+  required: [
+    'id',
+    'status',
+    'originalAmountCents',
+    'discountAmountCents',
+    'finalAmountCents',
+    'promotionActivated',
+    'isPromoted',
+  ],
+};
+
 export const subscribePlanRequestSchema = {
   type: 'object',
   properties: {
@@ -423,6 +553,21 @@ export const mySubscriptionResponseSchema = {
     },
   },
   required: ['subscription'],
+};
+
+export const professionalPromotionResponseSchema = {
+  type: 'object',
+  properties: {
+    id: uuidSchema('4f2aeb25-0c9f-48ba-b605-2c87f225cb1d'),
+    status: {
+      type: 'string',
+      enum: promotionStatusValues,
+      example: 'ACTIVE',
+    },
+    startsAt: nullableDateTimeSchema('2026-06-16T10:35:00.000Z'),
+    endsAt: nullableDateTimeSchema('2026-06-23T10:35:00.000Z'),
+  },
+  required: ['id', 'status', 'startsAt', 'endsAt'],
 };
 
 export const subscribePlanResponseSchema = {

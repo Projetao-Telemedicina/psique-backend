@@ -6,6 +6,10 @@ export * from './plans.tags.swagger';
 
 export * from './subscriptions.tags.swagger';
 
+export * from './promotion-plans.tags.swagger';
+
+export * from './promotions.tags.swagger';
+
 export * from './payments.schemas';
 
 export * from './payment-methods.create-setup-intent.swagger';
@@ -27,6 +31,14 @@ export * from './plans.create.swagger';
 export * from './plans.list.swagger';
 
 export * from './plans.get-by-id.swagger';
+
+export * from './promotion-plans.create.swagger';
+
+export * from './promotion-plans.list.swagger';
+
+export * from './promotion-plans.get-by-id.swagger';
+
+export * from './promotions.checkout.swagger';
 
 export * from './subscriptions.checkout.swagger';
 
