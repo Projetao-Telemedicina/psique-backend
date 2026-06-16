@@ -9,6 +9,7 @@ import { CouponsService } from '@/coupons/coupons.service';
 import { PrismaService } from '@/prisma';
 import { CheckoutAppointmentDto } from './dto/checkout-appointment.dto';
 import { PaymentMethodsService } from './payment-methods.service';
+import { PromotionsService } from './promotions.service';
 import { StripeService } from './stripe/stripe.service';
 import { SubscriptionsService } from './subscriptions.service';
 
@@ -29,6 +30,7 @@ export class PaymentsService {
     private readonly couponsService: CouponsService,
     private readonly paymentMethodsService: PaymentMethodsService,
     private readonly stripeService: StripeService,
+    private readonly promotionsService: PromotionsService,
     private readonly subscriptionsService: SubscriptionsService,
   ) {}
 
@@ -233,7 +235,15 @@ export class PaymentsService {
       throw new NotFoundException('Pagamento nÃ£o encontrado para este evento.');
     }
 
-    if (payment.purpose !== 'APPOINTMENT') {
+    if (payment.purpose === 'PLAN_SUBSCRIPTION') {
+      return;
+    }
+
+    if (payment.purpose === 'PROFILE_PROMOTION') {
+      await this.promotionsService.activatePromotionPayment(
+        payment.id,
+        paymentIntent.id,
+      );
       return;
     }
 
@@ -250,7 +260,17 @@ export class PaymentsService {
       return;
     }
 
-    if (payment.purpose !== 'APPOINTMENT') {
+    if (payment.purpose === 'PLAN_SUBSCRIPTION') {
+      return;
+    }
+
+    if (payment.purpose === 'PROFILE_PROMOTION') {
+      await this.promotionsService.markPromotionPaymentFailed(
+        payment.id,
+        paymentIntent.id,
+        paymentIntent.last_payment_error?.message ?? PAYMENT_FAILURE_REASON,
+        'FAILED',
+      );
       return;
     }
 
@@ -272,7 +292,17 @@ export class PaymentsService {
       return;
     }
 
-    if (payment.purpose !== 'APPOINTMENT') {
+    if (payment.purpose === 'PLAN_SUBSCRIPTION') {
+      return;
+    }
+
+    if (payment.purpose === 'PROFILE_PROMOTION') {
+      await this.promotionsService.markPromotionPaymentFailed(
+        payment.id,
+        paymentIntent.id,
+        'Pagamento cancelado pelo provedor.',
+        'CANCELED',
+      );
       return;
     }
 

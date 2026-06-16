@@ -159,6 +159,14 @@ enum PlanBillingCycle {
   YEARLY
 }
 
+enum PromotionStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELED
+  FAILED
+}
+
 // enum WalletTransactionType {
 //   REFUND_CREDIT
 //   APPOINTMENT_PAYMENT
@@ -169,14 +177,6 @@ enum PlanBillingCycle {
 // enum WalletTransactionDirection {
 //   CREDIT
 //   DEBIT
-// }
-
-// enum PromotionStatus {
-//   PENDING
-//   ACTIVE
-//   EXPIRED
-//   CANCELED
-//   FAILED
 // }
 
 enum SubscriptionStatus {
@@ -299,6 +299,8 @@ model ProfessionalProfile {
   gapBetweenAppointmentsMinutes Int                        @default(0) @map("gap_between_appointments_minutes")
   scoreAvg                      Decimal                    @default(0) @db.Decimal(4, 2) @map("score_avg")
   reviewCount                   Int                        @default(0) @map("review_count")
+  isPromoted                    Boolean                    @default(false) @map("is_promoted")
+  promotionEndsAt               DateTime?                  @map("promotion_ends_at")
   createdAt                     DateTime                   @default(now()) @map("created_at")
   updatedAt                     DateTime                   @updatedAt @map("updated_at")
 
@@ -313,8 +315,8 @@ model ProfessionalProfile {
   reviews         Review[]
   acceptedEmergencyRequests EmergencyRequest[] @relation("EmergencyMatchedProfessional")
   emergencyOffers EmergencyOffer[]
+  promotions      ProfessionalPromotion[]
   // chatRooms       ChatRoom[]
-  // promotions      ProfessionalPromotion[]
   // acceptedPanics  PanicRequest[]      @relation("AcceptedProfessional")
   // panicOffers     PanicRequestOffer[]
   questionnaire   ProfessionalQuestionnaire?
@@ -712,34 +714,39 @@ model Subscription {
   @@map("subscriptions")
 }
 
-// model PromotionPlan {
-//   id           String  @id @default(uuid()) @map("promotion_plan_id")
-//   name         String
-//   description  String?
-//   priceCents   Int     @map("price_cents")
-//   durationDays Int     @map("duration_days")
-//   isActive     Boolean @default(true) @map("is_active")
+model PromotionPlan {
+  id           String   @id @default(uuid()) @map("promotion_plan_id")
+  name         String
+  description  String?
+  priceCents   Int      @map("price_cents")
+  durationDays Int      @map("duration_days")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
-//   promotions ProfessionalPromotion[]
+  promotions ProfessionalPromotion[]
 
-//   @@map("promotion_plans")
-// }
+  @@map("promotion_plans")
+}
 
-// model ProfessionalPromotion {
-//   id              String          @id @default(uuid()) @map("promotion_id")
-//   professionalId  String          @map("professional_id")
-//   promotionPlanId String          @map("promotion_plan_id")
-//   status          PromotionStatus @default(PENDING)
-//   startsAt        DateTime?       @map("starts_at")
-//   endsAt          DateTime?       @map("ends_at")
-//   createdAt       DateTime        @default(now()) @map("created_at")
+model ProfessionalPromotion {
+  id              String          @id @default(uuid()) @map("promotion_id")
+  professionalId  String          @map("professional_id")
+  promotionPlanId String          @map("promotion_plan_id")
+  status          PromotionStatus @default(PENDING)
+  startsAt        DateTime?       @map("starts_at")
+  endsAt          DateTime?       @map("ends_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
 
-//   professional  ProfessionalProfile @relation(fields: [professionalId], references: [userId])
-//   promotionPlan PromotionPlan       @relation(fields: [promotionPlanId], references: [id])
-//   payments      Payment[]
+  professional  ProfessionalProfile @relation(fields: [professionalId], references: [userId], onDelete: Cascade)
+  promotionPlan PromotionPlan       @relation(fields: [promotionPlanId], references: [id])
+  payments      Payment[]
 
-//   @@map("professional_promotions")
-// }
+  @@index([professionalId, status])
+  @@index([status, endsAt])
+  @@map("professional_promotions")
+}
 
 model Payment {
   id                   String        @id @default(uuid()) @map("payment_id")
@@ -763,6 +770,7 @@ model Payment {
   paymentMethod PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
   appointment   Appointment?   @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
   subscription  Subscription?  @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  promotion     ProfessionalPromotion? @relation(fields: [promotionId], references: [id], onDelete: SetNull)
   userCoupon    UserCoupon?    @relation(fields: [userCouponId], references: [id], onDelete: SetNull)
 
   @@index([userId, status])
