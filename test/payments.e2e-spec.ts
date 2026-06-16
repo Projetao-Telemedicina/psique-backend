@@ -71,6 +71,19 @@ describe('PaymentsModule (e2e)', () => {
     };
   }
 
+  async function setupProfessionalSession() {
+    const professional = await createProfessionalUser(context.prisma);
+    const professionalToken = await createAuthToken(context.app, context.prisma, {
+      id: professional.id,
+      role: Role.PROFESSIONAL,
+    });
+
+    return {
+      professional,
+      professionalToken,
+    };
+  }
+
   async function createAdminSession() {
     const admin = await createAdminUser(context.prisma);
     const token = await createAuthToken(context.app, context.prisma, {
@@ -179,6 +192,35 @@ describe('PaymentsModule (e2e)', () => {
       priceCents: number;
       stripeProductId: string;
       stripePriceId: string;
+    };
+  }
+
+  async function createPromotionPlan(
+    token: string,
+    overrides: Partial<{
+      name: string;
+      description: string;
+      priceCents: number;
+      durationDays: number;
+    }> = {},
+  ) {
+    const response = await request(context.app.getHttpServer())
+      .post('/promotion-plans')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: overrides.name ?? 'Impulsionamento 7 dias',
+        description:
+          overrides.description ??
+          'Destaca o perfil do psicólogo na vitrine pública por 7 dias.',
+        priceCents: overrides.priceCents ?? 2990,
+        durationDays: overrides.durationDays ?? 7,
+      })
+      .expect(201);
+
+    return response.body as {
+      id: string;
+      priceCents: number;
+      durationDays: number;
     };
   }
 
@@ -412,6 +454,161 @@ describe('PaymentsModule (e2e)', () => {
       expect(renewalPayments).toHaveLength(2);
       expect(renewalPayments[1].gatewayTransactionId).toBe('pi_renewal_123');
       expect(renewalPayments[1].status).toBe('APPROVED');
+    });
+  });
+
+  describe('promotion plans and promotions', () => {
+    it('admin deve criar plano de impulsionamento e profissional deve listar planos ativos', async () => {
+      const { token: adminToken } = await createAdminSession();
+      const { professionalToken } = await setupProfessionalSession();
+
+      const createdPlan = await createPromotionPlan(adminToken, {
+        priceCents: 3990,
+        durationDays: 14,
+      });
+
+      const response = await request(context.app.getHttpServer())
+        .get('/promotion-plans')
+        .set('Authorization', `Bearer ${professionalToken}`)
+        .expect(200);
+
+      expect(response.body).toHaveLength(1);
+      expect(response.body[0].id).toBe(createdPlan.id);
+      expect(response.body[0].durationDays).toBe(14);
+    });
+
+    it('profissional deve contratar impulsionamento e ativar indicador no perfil', async () => {
+      const { token: adminToken } = await createAdminSession();
+      const { professional, professionalToken } = await setupProfessionalSession();
+      const promotionPlan = await createPromotionPlan(adminToken, {
+        priceCents: 2990,
+        durationDays: 7,
+      });
+      const paymentMethod = await createSavedPaymentMethod(
+        professionalToken,
+        'pm_test_promotion',
+      );
+
+      const response = await request(context.app.getHttpServer())
+        .post('/promotions/checkout')
+        .set('Authorization', `Bearer ${professionalToken}`)
+        .send({
+          promotionPlanId: promotionPlan.id,
+          paymentMethodId: paymentMethod.id,
+        })
+        .expect(201);
+
+      expect(response.body.status).toBe('APPROVED');
+      expect(response.body.promotionActivated).toBe(true);
+      expect(response.body.isPromoted).toBe(true);
+      expect(response.body.finalAmountCents).toBe(2990);
+
+      const payment = await context.prisma.payment.findUniqueOrThrow({
+        where: { id: response.body.id },
+      });
+      const promotion = await context.prisma.professionalPromotion.findUniqueOrThrow({
+        where: { id: response.body.promotionId },
+      });
+      const professionalProfile =
+        await context.prisma.professionalProfile.findUniqueOrThrow({
+          where: { userId: professional.id },
+        });
+
+      expect(payment.purpose).toBe('PROFILE_PROMOTION');
+      expect(payment.status).toBe('APPROVED');
+      expect(promotion.status).toBe('ACTIVE');
+      expect(promotion.endsAt).not.toBeNull();
+      expect(professionalProfile.isPromoted).toBe(true);
+      expect(professionalProfile.promotionEndsAt).not.toBeNull();
+    });
+
+    it('profissional nao deve contratar novo impulsionamento enquanto houver um ativo', async () => {
+      const { token: adminToken } = await createAdminSession();
+      const { professionalToken } = await setupProfessionalSession();
+      const promotionPlan = await createPromotionPlan(adminToken);
+      const paymentMethod = await createSavedPaymentMethod(
+        professionalToken,
+        'pm_test_promotion_block',
+      );
+
+      await request(context.app.getHttpServer())
+        .post('/promotions/checkout')
+        .set('Authorization', `Bearer ${professionalToken}`)
+        .send({
+          promotionPlanId: promotionPlan.id,
+          paymentMethodId: paymentMethod.id,
+        })
+        .expect(201);
+
+      await request(context.app.getHttpServer())
+        .post('/promotions/checkout')
+        .set('Authorization', `Bearer ${professionalToken}`)
+        .send({
+          promotionPlanId: promotionPlan.id,
+          paymentMethodId: paymentMethod.id,
+        })
+        .expect(409);
+    });
+
+    it('deve ativar impulsionamento pendente após webhook do Stripe', async () => {
+      const { token: adminToken } = await createAdminSession();
+      const { professional, professionalToken } = await setupProfessionalSession();
+      const promotionPlan = await createPromotionPlan(adminToken, {
+        priceCents: 4990,
+        durationDays: 10,
+      });
+      const paymentMethod = await createSavedPaymentMethod(
+        professionalToken,
+        'pm_test_promotion_pending',
+      );
+
+      mockStripeService.createAndConfirmPaymentIntent.mockResolvedValueOnce({
+        id: 'pi_promotion_pending_123',
+        status: 'requires_action',
+        clientSecret: 'pi_promotion_pending_123_secret',
+      });
+
+      const checkoutResponse = await request(context.app.getHttpServer())
+        .post('/promotions/checkout')
+        .set('Authorization', `Bearer ${professionalToken}`)
+        .send({
+          promotionPlanId: promotionPlan.id,
+          paymentMethodId: paymentMethod.id,
+        })
+        .expect(201);
+
+      expect(checkoutResponse.body.status).toBe('PENDING');
+      expect(checkoutResponse.body.promotionActivated).toBe(false);
+      expect(checkoutResponse.body.isPromoted).toBe(false);
+
+      await request(context.app.getHttpServer())
+        .post('/payments/webhook')
+        .set('stripe-signature', 'test-signature')
+        .send({
+          type: 'payment_intent.succeeded',
+          data: {
+            object: {
+              id: 'pi_promotion_pending_123',
+            },
+          },
+        })
+        .expect(201);
+
+      const payment = await context.prisma.payment.findUniqueOrThrow({
+        where: { id: checkoutResponse.body.id },
+      });
+      const promotion = await context.prisma.professionalPromotion.findUniqueOrThrow({
+        where: { id: checkoutResponse.body.promotionId },
+      });
+      const professionalProfile =
+        await context.prisma.professionalProfile.findUniqueOrThrow({
+          where: { userId: professional.id },
+        });
+
+      expect(payment.status).toBe('APPROVED');
+      expect(promotion.status).toBe('ACTIVE');
+      expect(professionalProfile.isPromoted).toBe(true);
+      expect(professionalProfile.promotionEndsAt).not.toBeNull();
     });
   });
 

@@ -105,6 +105,8 @@ export async function createE2eApp(): Promise<E2eAppContext> {
 
 export async function resetDatabase(prisma: PrismaService): Promise<void> {
   await prisma.payment.deleteMany();
+  await prisma.professionalPromotion.deleteMany();
+  await prisma.promotionPlan.deleteMany();
   await prisma.subscription.deleteMany();
   await prisma.plan.deleteMany();
   await prisma.paymentMethod.deleteMany();
