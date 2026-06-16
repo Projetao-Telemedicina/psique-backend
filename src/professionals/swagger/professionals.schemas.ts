@@ -1,5 +1,6 @@
 import {
   dateTimeSchema,
+  nullableDateTimeSchema,
   nullableDateSchema,
   nullableStringSchema,
   onlineStatusEnumValues,
@@ -127,6 +128,11 @@ export const professionalProfileResponseProperties = {
     type: 'integer',
     example: 38,
   },
+  isPromoted: {
+    type: 'boolean',
+    example: true,
+  },
+  promotionEndsAt: nullableDateTimeSchema('2026-06-23T10:35:00.000Z'),
   createdAt: dateTimeSchema('2026-05-05T12:00:00.000Z'),
   updatedAt: dateTimeSchema('2026-05-05T12:30:00.000Z'),
 };
@@ -143,6 +149,8 @@ export const professionalProfileResponseSchema = {
     'gapBetweenAppointmentsMinutes',
     'scoreAvg',
     'reviewCount',
+    'isPromoted',
+    'promotionEndsAt',
     'createdAt',
     'updatedAt',
   ],
@@ -202,6 +210,8 @@ export const professionalProfileWithUserResponseSchema = {
     'gapBetweenAppointmentsMinutes',
     'scoreAvg',
     'reviewCount',
+    'isPromoted',
+    'promotionEndsAt',
     'createdAt',
     'updatedAt',
     'user',
@@ -306,14 +316,10 @@ export const adminProfessionalValidationRequestListResponseSchema = {
   items: adminProfessionalValidationRequestResponseSchema,
 };
 
-export const professionalsByScoreAvgResponseSchema = {
+const professionalsByScoreAvgItemSchema = {
   type: 'object',
   properties: {
-    userId: {
-      type: 'string',
-      format: 'uuid',
-      example: '1ff7c594-8447-4f93-855d-236d7369a7eb',
-    },
+    userId: uuidSchema('1ff7c594-8447-4f93-855d-236d7369a7eb'),
     scoreAvg: {
       type: 'string',
       example: '4.75',
@@ -322,6 +328,11 @@ export const professionalsByScoreAvgResponseSchema = {
       type: 'integer',
       example: 38,
     },
+    isPromoted: {
+      type: 'boolean',
+      example: true,
+    },
+    promotionEndsAt: nullableDateTimeSchema('2026-06-23T10:35:00.000Z'),
     specialty: {
       type: 'string',
       nullable: true,
@@ -353,5 +364,18 @@ export const professionalsByScoreAvgResponseSchema = {
       required: ['name', 'status'],
     },
   },
-  required: ['userId', 'scoreAvg', 'reviewCount', 'onlineStatus', 'user'],
+  required: [
+    'userId',
+    'scoreAvg',
+    'reviewCount',
+    'isPromoted',
+    'promotionEndsAt',
+    'onlineStatus',
+    'user',
+  ],
+};
+
+export const professionalsByScoreAvgResponseSchema = {
+  type: 'array',
+  items: professionalsByScoreAvgItemSchema,
 };
