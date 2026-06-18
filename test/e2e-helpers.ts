@@ -48,14 +48,19 @@ export async function createE2eApp(): Promise<E2eAppContext> {
 }
 
 export async function resetDatabase(prisma: PrismaService): Promise<void> {
+  await prisma.messageAttachment.deleteMany();
+  await prisma.message.deleteMany();
+  await prisma.chatRoom.deleteMany();
   await prisma.emergencyOffer.deleteMany();
-  await prisma.emergencyRequest.deleteMany();
   await prisma.appointmentRescheduleRequest.deleteMany();
   await prisma.review.deleteMany();
   await prisma.appointment.deleteMany();
+  await prisma.emergencyRequest.deleteMany();
   await prisma.professionalRequestDocument.deleteMany();
   await prisma.professionalRequest.deleteMany();
   await prisma.token.deleteMany();
+  await prisma.userCoupon.deleteMany();
+  await prisma.coupon.deleteMany();
   await prisma.user.deleteMany();
 }
 
@@ -92,6 +97,25 @@ export async function createProfessionalUser(prisma: PrismaService) {
       },
     },
     include: { professionalProfile: true },
+  });
+}
+
+export async function createAppointmentForChat(
+  prisma: PrismaService,
+  input: {
+    patientId: string;
+    professionalId: string;
+  },
+) {
+  return prisma.appointment.create({
+    data: {
+      patientId: input.patientId,
+      professionalId: input.professionalId,
+      status: 'SCHEDULED',
+      startsAt: new Date('2026-06-10T14:00:00.000Z'),
+      endsAt: new Date('2026-06-10T14:50:00.000Z'),
+      priceCents: 15000,
+    },
   });
 }
 

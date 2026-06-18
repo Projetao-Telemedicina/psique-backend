@@ -9,6 +9,7 @@ import {
   userStatusEnumValues,
   uuidSchema,
 } from '../../common/swagger';
+import { appointmentResponseSchema } from '../../appointment/swagger/appointment.schemas';
 
 export const panicButtonActivationStatusEnumValues = [
   'SEARCHING',
@@ -150,6 +151,10 @@ export const panicButtonActivationResponseSchema = {
     closedAt: nullableDateTimeSchema('2026-05-20T18:02:00.000Z'),
     createdAt: dateTimeSchema('2026-05-20T18:00:00.000Z'),
     updatedAt: dateTimeSchema('2026-05-20T18:00:12.000Z'),
+    appointment: {
+      ...appointmentResponseSchema,
+      nullable: true,
+    },
     patient: patientSummarySchema,
     matchedProfessional: {
       ...professionalSummarySchema,
@@ -167,6 +172,7 @@ export const panicButtonActivationResponseSchema = {
     'expiresAt',
     'createdAt',
     'updatedAt',
+    'appointment',
     'patient',
     'offers',
   ],

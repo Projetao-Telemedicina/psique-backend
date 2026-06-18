@@ -7,6 +7,7 @@ import {
 } from '@prisma/client';
 
 const emergencyRequestInclude = {
+  appointment: true,
   patient: {
     include: {
       user: {

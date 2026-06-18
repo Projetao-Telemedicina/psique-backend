@@ -11,7 +11,8 @@ export function RejectPanicButtonOfferApiDocs(): MethodDecorator {
     ApiOperation({
       summary: 'Rejeita uma oferta de atendimento do botão do pânico',
       description:
-        'Permite que o psicólogo autenticado rejeite uma oferta pendente para que o sistema tente o próximo profissional elegível.',
+        'Permite que o psicólogo autenticado rejeite uma oferta pendente para que o sistema tente o próximo profissional elegível. ' +
+        'Ao rejeitar, a consulta provisória vinculada ao acionamento é removida antes da nova tentativa.',
     }),
     ApiBody({
       required: false,

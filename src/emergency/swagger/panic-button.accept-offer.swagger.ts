@@ -8,7 +8,8 @@ export function AcceptPanicButtonOfferApiDocs(): MethodDecorator {
     ApiOperation({
       summary: 'Aceita uma oferta de atendimento do botão do pânico',
       description:
-        'Permite que o psicólogo autenticado aceite uma oferta pendente vinculada a um acionamento do botão do pânico.',
+        'Permite que o psicólogo autenticado aceite uma oferta pendente vinculada a um acionamento do botão do pânico. ' +
+        'A consulta provisória criada quando a oferta foi enviada é mantida após o aceite.',
     }),
     ApiCreatedResponse({
       description: 'Oferta aceita com sucesso.',

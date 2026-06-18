@@ -12,7 +12,8 @@ export function ActivatePanicButtonApiDocs(): MethodDecorator {
       summary: 'Aciona o botão do pânico',
       description:
         'Registra um novo acionamento do botão do pânico para o paciente autenticado e inicia a busca ' +
-        'pelo primeiro psicólogo elegível disponível.',
+        'pelo primeiro psicólogo elegível disponível. Quando uma oferta é criada para um profissional, ' +
+        'uma consulta provisória também é criada e vinculada ao acionamento.',
     }),
     ApiBody({
       required: false,
