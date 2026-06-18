@@ -92,34 +92,45 @@ enum DiarySleepQuality {
   LESS_THAN_FOUR
 }
 
+enum RecurrenceType {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
 // enum CalendarEventType {
 //   PERSONAL_COMMITMENT
 //   BLOCKED_TIME
 //   BREAK
 // }
 
-// enum ChatRoomStatus {
-//   ACTIVE
-//   ARCHIVED
-//   READ_ONLY
-// }
+enum ChatRoomStatus {
+  ACTIVE
+  ARCHIVED
+  READ_ONLY
+}
 
-// enum MessageType {
-//   TEXT
-//   IMAGE
-//   FILE
-//   SYSTEM
-// }
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  SYSTEM
+}
 
-// enum CouponCategory {
-//   SINGLE_APPOINTMENT
-//   PLAN_SUBSCRIPTION
-// }
+enum CouponCategory {
+  SINGLE_APPOINTMENT
+  PLAN_SUBSCRIPTION
+}
 
-// enum CouponDiscountType {
-//   PERCENTAGE
-//   FIXED
-// }
+enum CouponDiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum CouponDistributionType {
+  PUBLIC
+  TARGETED
+}
 
 // enum WalletTransactionType {
 //   REFUND_CREDIT
@@ -225,11 +236,11 @@ model User {
 
   reviewedProfessionalRequests ProfessionalRequest[] @relation("ReviewedProfessionalRequests")
   requestedReschedules          AppointmentRescheduleRequest[]
-  // sentMessages                  Message[]
+  sentMessages                  Message[]
   // paymentMethods                PaymentMethod[]
   // subscriptions                 Subscription[]
   // payments                      Payment[]
-  // userCoupons                   UserCoupon[]
+  userCoupons                   UserCoupon[]
   // notifications                 Notification[]
 
   @@map("users")
@@ -258,10 +269,10 @@ model PatientProfile {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  appointments   Appointment[]
-  reviews        Review[]
+  appointments      Appointment[]
+  reviews           Review[]
   emergencyRequests EmergencyRequest[]
-  // chatRooms      ChatRoom[]
+  chatRooms         ChatRoom[]
   // wallet         Wallet?
   // panicRequests  PanicRequest[]
   diaryEntries   DiaryEntry[]
@@ -287,8 +298,9 @@ model ProfessionalProfile {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  requests        ProfessionalRequest[]
-  // availabilities  ProfessionalAvailability[]
+  requests       ProfessionalRequest[]
+  chatRooms      ChatRoom[]
+  availabilities ProfessionalAvailability[]
   // breaks          ProfessionalBreak[]
   // calendarEvents  ProfessionalCalendarEvent[]
   appointments    Appointment[]
@@ -336,19 +348,24 @@ model ProfessionalRequestDocument {
   @@map("professional_request_documents")
 }
 
-// model ProfessionalAvailability {
-//   id                  String  @id @default(uuid()) @map("availability_id")
-//   professionalId      String  @map("professional_id")
-//   weekday             Int
-//   startTime           String  @map("start_time")
-//   endTime             String  @map("end_time")
-//   slotDurationMinutes Int     @default(50) @map("slot_duration_minutes")
-//   isActive            Boolean @default(true) @map("is_active")
+model ProfessionalAvailability {
+  id                  String         @id @default(uuid()) @map("availability_id")
+  professionalId      String         @map("professional_id")
+  weekday             Int            // 0 = domingo ... 6 = sábado
+  startTime           String         @map("start_time")  // "HH:MM"
+  endTime             String         @map("end_time")    // "HH:MM"
+  slotDurationMinutes Int            @default(50) @map("slot_duration_minutes")
+  recurrence          RecurrenceType @default(WEEKLY)
+  isActive            Boolean        @default(true) @map("is_active")
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
 
-//   professional ProfessionalProfile @relation(fields: [professionalId], references: [userId], onDelete: Cascade)
+  professional ProfessionalProfile @relation(fields: [professionalId], references: [userId], onDelete: Cascade)
 
-//   @@map("professional_availability")
-// }
+  @@unique([professionalId, weekday, startTime, recurrence])
+  @@index([professionalId, isActive])
+  @@map("professional_availabilities")
+}
 
 // model ProfessionalBreak {
 //   id             String   @id @default(uuid()) @map("break_id")
@@ -383,6 +400,7 @@ model ProfessionalRequestDocument {
 
 model Appointment {
   id                            String                 @id @default(uuid()) @map("appointment_id")
+  emergencyRequestId            String?                @unique @map("emergency_request_id")
   patientId                     String                 @map("patient_id")
   professionalId                String                 @map("professional_id")
   status                        AppointmentStatus      @default(SCHEDULED)
@@ -402,6 +420,7 @@ model Appointment {
   googleCalendarEventId  String?  @map("google_calendar_event_id")
   meetLink               String?  @map("meet_link")
 
+  emergencyRequest EmergencyRequest? @relation(fields: [emergencyRequestId], references: [id], onDelete: SetNull)
   patient      PatientProfile       @relation(fields: [patientId], references: [userId])
   professional ProfessionalProfile  @relation(fields: [professionalId], references: [userId])
 
@@ -410,7 +429,7 @@ model Appointment {
 
   rescheduleRequests AppointmentRescheduleRequest[]
   review             Review?
-  // chatRooms          ChatRoom[]
+  chatRooms          ChatRoom[]
   // walletTransactions WalletTransaction[]
   // payments           Payment[]
   // videoCallSessions  VideoCallSession[]
@@ -467,6 +486,7 @@ model EmergencyRequest {
 
   patient             PatientProfile       @relation(fields: [patientId], references: [userId], onDelete: Cascade)
   matchedProfessional ProfessionalProfile? @relation("EmergencyMatchedProfessional", fields: [matchedProfessionalId], references: [userId])
+  appointment         Appointment?
   offers              EmergencyOffer[]
 
   @@index([patientId, status])
@@ -497,87 +517,104 @@ model EmergencyOffer {
   @@map("emergency_offers")
 }
 
-// model ChatRoom {
-//   id             String         @id @default(uuid()) @map("room_id")
-//   patientId      String         @map("patient_id")
-//   professionalId String         @map("professional_id")
-//   appointmentId  String?        @map("appointment_id")
-//   status         ChatRoomStatus @default(ACTIVE)
-//   createdAt      DateTime       @default(now()) @map("created_at")
-//   archivedAt     DateTime?      @map("archived_at")
+model ChatRoom {
+  id             String         @id @default(uuid()) @map("room_id")
+  patientId      String         @map("patient_id")
+  professionalId String         @map("professional_id")
+  appointmentId  String?        @map("appointment_id")
+  status         ChatRoomStatus @default(ACTIVE)
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  archivedAt     DateTime?      @map("archived_at")
 
-//   patient      PatientProfile      @relation(fields: [patientId], references: [userId])
-//   professional ProfessionalProfile @relation(fields: [professionalId], references: [userId])
-//   appointment  Appointment?        @relation(fields: [appointmentId], references: [id])
+  patient      PatientProfile      @relation(fields: [patientId], references: [userId], onDelete: Cascade)
+  professional ProfessionalProfile @relation(fields: [professionalId], references: [userId], onDelete: Cascade)
+  appointment  Appointment?        @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
 
-//   messages Message[]
+  messages Message[]
 
-//   @@map("chat_rooms")
-// }
+  @@unique([patientId, professionalId])
+  @@index([patientId])
+  @@index([professionalId])
+  @@map("chat_rooms")
+}
 
-// model Message {
-//   id              String      @id @default(uuid()) @map("message_id")
-//   roomId          String      @map("room_id")
-//   senderId        String      @map("sender_id")
-//   type            MessageType @default(TEXT)
-//   content         String?
-//   isAutoGenerated Boolean     @default(false) @map("is_auto_generated")
-//   sentAt          DateTime    @default(now()) @map("sent_at")
-//   readAt          DateTime?   @map("read_at")
+model Message {
+  id              String      @id @default(uuid()) @map("message_id")
+  roomId          String      @map("room_id")
+  senderId        String      @map("sender_id")
+  type            MessageType @default(TEXT)
+  content         String?
+  isAutoGenerated Boolean     @default(false) @map("is_auto_generated")
+  sentAt          DateTime    @default(now()) @map("sent_at")
+  readAt          DateTime?   @map("read_at")
 
-//   room   ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-//   sender User     @relation(fields: [senderId], references: [id])
+  room   ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
-//   attachments MessageAttachment[]
+  attachments MessageAttachment[]
 
-//   @@map("messages")
-// }
+  @@index([roomId, sentAt])
+  @@index([senderId])
+  @@map("messages")
+}
 
-// model MessageAttachment {
-//   id         String @id @default(uuid()) @map("attachment_id")
-//   messageId  String @map("message_id")
-//   fileName   String @map("file_name")
-//   fileUrl    String @map("file_url")
-//   mimeType   String @map("mime_type")
-//   sizeBytes  Int    @map("size_bytes")
+model MessageAttachment {
+  id        String   @id @default(uuid()) @map("attachment_id")
+  messageId String   @map("message_id")
+  fileName  String   @map("file_name")
+  mimeType  String   @map("mime_type")
+  sizeBytes Int      @map("size_bytes")
+  fileData  Bytes    @map("file_data")
+  createdAt DateTime @default(now()) @map("created_at")
 
-//   message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
-//   @@map("message_attachments")
-// }
+  @@index([messageId])
+  @@map("message_attachments")
+}
 
-// model Coupon {
-//   id               String             @id @default(uuid()) @map("coupon_id")
-//   code             String             @unique
-//   title            String
-//   description      String?
-//   category         CouponCategory
-//   discountType     CouponDiscountType @map("discount_type")
-//   discountValue    Decimal            @db.Decimal(10, 2) @map("discount_value")
-//   maxDiscountCents Int?               @map("max_discount_cents")
-//   expiresAt        DateTime           @map("expires_at")
-//   isActive         Boolean            @default(true) @map("is_active")
-//   createdAt        DateTime           @default(now()) @map("created_at")
+model Coupon {
+  id                  String                 @id @default(uuid()) @map("coupon_id")
+  code                String                 @unique
+  title               String
+  description         String?
+  category            CouponCategory
+  discountType        CouponDiscountType     @map("discount_type")
+  discountValue       Decimal                @db.Decimal(10, 2) @map("discount_value")
+  maxDiscountCents    Int?                   @map("max_discount_cents")  // teto de desconto para PERCENTAGE
+  minPurchaseCents    Int?                   @map("min_purchase_cents")  // valor mínimo para aplicar
+  maxUses             Int?                   @map("max_uses")            // null = ilimitado
+  currentUses         Int                    @default(0) @map("current_uses")
+  maxUsesPerUser      Int                    @default(1) @map("max_uses_per_user")
+  distributionType    CouponDistributionType @default(PUBLIC) @map("distribution_type")
+  firstMonthOnly      Boolean                @default(false) @map("first_month_only") // aviso de "apenas primeiro mês"
+  expiresAt           DateTime               @map("expires_at")
+  isActive            Boolean                @default(true) @map("is_active")
+  createdAt           DateTime               @default(now()) @map("created_at")
+  updatedAt           DateTime               @updatedAt @map("updated_at")
 
-//   userCoupons UserCoupon[]
+  userCoupons UserCoupon[]
 
-//   @@map("coupons")
-// }
+  @@map("coupons")
+}
 
-// model UserCoupon {
-//   id        String   @id @default(uuid()) @map("user_coupon_id")
-//   couponId  String   @map("coupon_id")
-//   userId    String   @map("user_id")
-//   claimedAt DateTime @default(now()) @map("claimed_at")
-//   usedAt    DateTime? @map("used_at")
-//   isUsed    Boolean  @default(false) @map("is_used")
+model UserCoupon {
+  id         String    @id @default(uuid()) @map("user_coupon_id")
+  couponId   String    @map("coupon_id")
+  userId     String    @map("user_id")
+  claimedAt  DateTime  @default(now()) @map("claimed_at")
+  usedAt     DateTime? @map("used_at")
+  isUsed     Boolean   @default(false) @map("is_used")
+  reservedAt DateTime? @map("reserved_at")
 
-//   coupon   Coupon    @relation(fields: [couponId], references: [id])
-//   user     User      @relation(fields: [userId], references: [id])
-//   payments Payment[]
+  coupon   Coupon    @relation(fields: [couponId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
+  // payments Payment[]
 
-//   @@map("user_coupons")
-// }
+  @@unique([couponId, userId]) // evita duplicata de distribuição do mesmo cupom para o mesmo usuário
+  @@map("user_coupons")
+}
 
 // model Wallet {
 //   id           String   @id @default(uuid()) @map("wallet_id")

@@ -3,6 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { randomUUID } from 'node:crypto';
 import { EmergencyOfferStatus, EmergencyRequestStatus } from '@prisma/client';
 import { PrismaService } from '@/prisma';
+import { PanicButtonAppointmentsService } from './panic-button-appointments.service';
 import { EMERGENCY_EVENTS } from './constants/panic-button.constants';
 import { PanicButtonTimeoutsService } from './panic-button-timeouts.service';
 import { PanicButtonOfferRepository } from './repositories/panic-button-offer.repository';
@@ -20,6 +21,7 @@ export class PanicButtonDispatchService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly panicButtonAppointmentsService: PanicButtonAppointmentsService,
     private readonly panicButtonRequestRepository: PanicButtonRequestRepository,
     private readonly panicButtonOfferRepository: PanicButtonOfferRepository,
     private readonly panicButtonProfessionalRepository: PanicButtonProfessionalRepository,
@@ -133,13 +135,21 @@ export class PanicButtonDispatchService {
           return null;
         }
 
-        return this.panicButtonOfferRepository.create(tx, {
+        const createdOffer = await this.panicButtonOfferRepository.create(tx, {
           id: offerId,
           emergencyRequestId: request.id,
           professionalId: professional.userId,
           attemptNumber: nextAttemptNumber,
           expiresAt,
         });
+
+        await this.panicButtonAppointmentsService.createForEmergencyRequest(tx, {
+          emergencyRequestId: request.id,
+          patientId: request.patientId,
+          professionalId: professional.userId,
+        });
+
+        return createdOffer;
       });
 
       if (!createdOffer) {

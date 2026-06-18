@@ -211,6 +211,24 @@ describe('AppointmentController (e2e)', () => {
         .expect(409);
     });
 
+    it('deve retornar 409 quando paciente já tem consulta no mesmo horário com outro profissional', async () => {
+      const { patient, professional, patientToken } = await setupUsers();
+      const otherProfessional = await createProfessionalUser(context.prisma);
+
+      await createAppointmentInDb(patient.id, professional.id);
+
+      await request(context.app.getHttpServer())
+        .post('/appointments')
+        .set('Authorization', `Bearer ${patientToken}`)
+        .send({
+          professionalId: otherProfessional.id,
+          patientId: patient.id,
+          startsAt: futureDate(48),
+          endsAt: futureDate(49),
+        })
+        .expect(409);
+    });
+
     it('deve retornar 409 quando nova consulta se sobrepõe parcialmente', async () => {
       const { patient, professional, patientToken } = await setupUsers();
 
@@ -913,6 +931,419 @@ describe('AppointmentController (e2e)', () => {
         .patch(`/appointments/${NON_EXISTENT_UUID}/cancel`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ canceledBy: AppointmentCanceledBy.ADMIN })
+        .expect(404);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GET /appointments/:id — dados aninhados
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  describe('GET /appointments/:id — nested data', () => {
+    it('deve incluir patient e professional aninhados', async () => {
+      const { patient, professional, patientToken } = await setupUsers();
+      const appointment = await createAppointmentInDb(patient.id, professional.id);
+
+      const response = await request(context.app.getHttpServer())
+        .get(`/appointments/${appointment.id}`)
+        .set('Authorization', `Bearer ${patientToken}`)
+        .expect(200);
+
+      expect(response.body.patient).toBeDefined();
+      expect(response.body.patient.user).toBeDefined();
+      expect(response.body.patient.user.name).toBe(patient.name);
+
+      expect(response.body.professional).toBeDefined();
+      expect(response.body.professional.crp).toBeDefined();
+      expect(response.body.professional.specialty).toBeDefined();
+      expect(response.body.professional.user).toBeDefined();
+      expect(response.body.professional.user.name).toBe(professional.name);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GET /appointments/me/date
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  describe('GET /appointments/me/date', () => {
+    it('deve retornar consultas do dia para o paciente', async () => {
+      const { patient, professional, patientToken } = await setupUsers();
+
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setUTCHours(14, 0, 0, 0);
+      const endsAt = new Date(tomorrow);
+      endsAt.setUTCHours(15, 0, 0, 0);
+
+      await createAppointmentInDb(patient.id, professional.id, {
+        startsAt: tomorrow,
+        endsAt,
+      });
+
+      const dateStr = tomorrow.toISOString().slice(0, 10);
+
+      const response = await request(context.app.getHttpServer())
+        .get('/appointments/me/date')
+        .set('Authorization', `Bearer ${patientToken}`)
+        .query({ date: dateStr })
+        .expect(200);
+
+      expect(response.body).toHaveLength(1);
+      expect(response.body[0].patientId).toBe(patient.id);
+    });
+
+    it('deve retornar consultas do dia para o profissional', async () => {
+      const { patient, professional, professionalToken } = await setupUsers();
+
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setUTCHours(14, 0, 0, 0);
+      const endsAt = new Date(tomorrow);
+      endsAt.setUTCHours(15, 0, 0, 0);
+
+      await createAppointmentInDb(patient.id, professional.id, {
+        startsAt: tomorrow,
+        endsAt,
+      });
+
+      const dateStr = tomorrow.toISOString().slice(0, 10);
+
+      const response = await request(context.app.getHttpServer())
+        .get('/appointments/me/date')
+        .set('Authorization', `Bearer ${professionalToken}`)
+        .query({ date: dateStr })
+        .expect(200);
+
+      expect(response.body).toHaveLength(1);
+      expect(response.body[0].professionalId).toBe(professional.id);
+    });
+
+    it('deve retornar 400 para data inválida', async () => {
+      const { patientToken } = await setupUsers();
+
+      await request(context.app.getHttpServer())
+        .get('/appointments/me/date')
+        .set('Authorization', `Bearer ${patientToken}`)
+        .query({ date: 'not-a-date' })
+        .expect(400);
+    });
+
+    it('deve retornar lista vazia quando não há consultas no dia', async () => {
+      const { patient, professional, patientToken } = await setupUsers();
+
+      const farFuture = new Date();
+      farFuture.setDate(farFuture.getDate() + 30);
+      farFuture.setUTCHours(14, 0, 0, 0);
+      const endsAt = new Date(farFuture);
+      endsAt.setUTCHours(15, 0, 0, 0);
+
+      await createAppointmentInDb(patient.id, professional.id, {
+        startsAt: farFuture,
+        endsAt,
+      });
+
+      // consulta um dia diferente
+      const anotherDay = new Date();
+      anotherDay.setDate(anotherDay.getDate() + 31);
+      const dateStr = anotherDay.toISOString().slice(0, 10);
+
+      const response = await request(context.app.getHttpServer())
+        .get('/appointments/me/date')
+        .set('Authorization', `Bearer ${patientToken}`)
+        .query({ date: dateStr })
+        .expect(200);
+
+      expect(response.body).toHaveLength(0);
+    });
+
+    it('não deve incluir consultas canceladas', async () => {
+      const { patient, professional, patientToken } = await setupUsers();
+
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setUTCHours(14, 0, 0, 0);
+      const endsAt = new Date(tomorrow);
+      endsAt.setUTCHours(15, 0, 0, 0);
+
+      await createAppointmentInDb(patient.id, professional.id, {
+        startsAt: tomorrow,
+        endsAt,
+        status: AppointmentStatus.CANCELED,
+      });
+
+      const dateStr = tomorrow.toISOString().slice(0, 10);
+
+      const response = await request(context.app.getHttpServer())
+        .get('/appointments/me/date')
+        .set('Authorization', `Bearer ${patientToken}`)
+        .query({ date: dateStr })
+        .expect(200);
+
+      expect(response.body).toHaveLength(0);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GET /appointments/me/upcoming — paginação
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  describe('GET /appointments/me/upcoming — pagination', () => {
+    it('deve paginar corretamente com page e limit', async () => {
+      const { patient, professional, patientToken } = await setupUsers();
+
+      for (let i = 1; i <= 3; i++) {
+        await createAppointmentInDb(patient.id, professional.id, {
+          startsAt: new Date(Date.now() + (i + 2) * 24 * 60 * 60 * 1000),
+          endsAt: new Date(Date.now() + (i + 2) * 24 * 60 * 60 * 1000 + 60 * 60 * 1000),
+        });
+      }
+
+      const page1 = await request(context.app.getHttpServer())
+        .get('/appointments/me/upcoming?page=1&limit=2')
+        .set('Authorization', `Bearer ${patientToken}`)
+        .expect(200);
+
+      const page2 = await request(context.app.getHttpServer())
+        .get('/appointments/me/upcoming?page=2&limit=2')
+        .set('Authorization', `Bearer ${patientToken}`)
+        .expect(200);
+
+      expect(page1.body).toHaveLength(2);
+      expect(page2.body).toHaveLength(1);
+
+      const ids1 = page1.body.map((a: { id: string }) => a.id);
+      const ids2 = page2.body.map((a: { id: string }) => a.id);
+      expect(ids1).not.toEqual(expect.arrayContaining(ids2));
+    });
+
+    it('deve usar defaults de page=1 e limit=20 quando não informados', async () => {
+      const { patient, professional, patientToken } = await setupUsers();
+
+      await createAppointmentInDb(patient.id, professional.id);
+
+      const response = await request(context.app.getHttpServer())
+        .get('/appointments/me/upcoming')
+        .set('Authorization', `Bearer ${patientToken}`)
+        .expect(200);
+
+      expect(response.body).toHaveLength(1);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GET /appointments/:id/can-join
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  describe('GET /appointments/:id/can-join', () => {
+    it('deve permitir participante acessar dentro da janela de 10min antes', async () => {
+      const { patient, professional, patientToken } = await setupUsers();
+
+      const startsIn5min = new Date(Date.now() + 5 * 60 * 1000);
+      const endsIn65min = new Date(Date.now() + 65 * 60 * 1000);
+
+      const appointment = await createAppointmentInDb(patient.id, professional.id, {
+        startsAt: startsIn5min,
+        endsAt: endsIn65min,
+      });
+
+      const response = await request(context.app.getHttpServer())
+        .get(`/appointments/${appointment.id}/can-join`)
+        .set('Authorization', `Bearer ${patientToken}`)
+        .expect(200);
+
+      expect(response.body.canJoin).toBe(true);
+      expect(response.body.meetLink).toBe('https://meet.google.com/test-abc-def');
+      expect(response.body.minutesUntilStart).toBeGreaterThanOrEqual(0);
+    });
+
+    it('deve retornar 403 para não-participante', async () => {
+      const { patient, professional } = await setupUsers();
+      const outsider = await createPatientUser(context.prisma);
+      const outsiderToken = await createAuthToken(context.app, context.prisma, {
+        id: outsider.id,
+        role: Role.PATIENT,
+      });
+
+      const appointment = await createAppointmentInDb(patient.id, professional.id, {
+        startsAt: new Date(Date.now() + 5 * 60 * 1000),
+        endsAt: new Date(Date.now() + 65 * 60 * 1000),
+      });
+
+      await request(context.app.getHttpServer())
+        .get(`/appointments/${appointment.id}/can-join`)
+        .set('Authorization', `Bearer ${outsiderToken}`)
+        .expect(403);
+    });
+
+    it('deve retornar 400 quando a consulta já encerrou', async () => {
+      const { patient, professional, patientToken } = await setupUsers();
+
+      const appointment = await createAppointmentInDb(patient.id, professional.id, {
+        startsAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        endsAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
+      });
+
+      await request(context.app.getHttpServer())
+        .get(`/appointments/${appointment.id}/can-join`)
+        .set('Authorization', `Bearer ${patientToken}`)
+        .expect(400);
+    });
+
+    it('deve retornar 400 quando muito cedo (>10min antes)', async () => {
+      const { patient, professional, patientToken } = await setupUsers();
+
+      const appointment = await createAppointmentInDb(patient.id, professional.id, {
+        startsAt: new Date(Date.now() + 30 * 60 * 1000),
+        endsAt: new Date(Date.now() + 90 * 60 * 1000),
+      });
+
+      await request(context.app.getHttpServer())
+        .get(`/appointments/${appointment.id}/can-join`)
+        .set('Authorization', `Bearer ${patientToken}`)
+        .expect(400);
+    });
+
+    it('deve retornar 400 para consulta com status CANCELED', async () => {
+      const { patient, professional, patientToken } = await setupUsers();
+
+      const appointment = await createAppointmentInDb(patient.id, professional.id, {
+        startsAt: new Date(Date.now() + 5 * 60 * 1000),
+        endsAt: new Date(Date.now() + 65 * 60 * 1000),
+        status: AppointmentStatus.CANCELED,
+      });
+
+      await request(context.app.getHttpServer())
+        .get(`/appointments/${appointment.id}/can-join`)
+        .set('Authorization', `Bearer ${patientToken}`)
+        .expect(400);
+    });
+
+    it('deve retornar 404 para consulta inexistente', async () => {
+      const { patientToken } = await setupUsers();
+
+      await request(context.app.getHttpServer())
+        .get(`/appointments/${NON_EXISTENT_UUID}/can-join`)
+        .set('Authorization', `Bearer ${patientToken}`)
+        .expect(404);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // GET /appointments/:id/certificate
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  describe('GET /appointments/:id/certificate', () => {
+    it('deve retornar PDF para participante de consulta COMPLETED', async () => {
+      const { patient, professional, patientToken } = await setupUsers();
+
+      const appointment = await createAppointmentInDb(patient.id, professional.id, {
+        status: AppointmentStatus.COMPLETED,
+        completedAt: new Date(),
+      });
+
+      const response = await request(context.app.getHttpServer())
+        .get(`/appointments/${appointment.id}/certificate`)
+        .set('Authorization', `Bearer ${patientToken}`)
+        .expect(200);
+
+      expect(response.headers['content-type']).toBe('application/pdf');
+      expect(response.body).toBeInstanceOf(Buffer);
+      expect(response.body.length).toBeGreaterThan(0);
+    });
+
+    it('deve retornar 403 para não-participante', async () => {
+      const { patient, professional } = await setupUsers();
+      const outsider = await createPatientUser(context.prisma);
+      const outsiderToken = await createAuthToken(context.app, context.prisma, {
+        id: outsider.id,
+        role: Role.PATIENT,
+      });
+
+      const appointment = await createAppointmentInDb(patient.id, professional.id, {
+        status: AppointmentStatus.COMPLETED,
+        completedAt: new Date(),
+      });
+
+      await request(context.app.getHttpServer())
+        .get(`/appointments/${appointment.id}/certificate`)
+        .set('Authorization', `Bearer ${outsiderToken}`)
+        .expect(403);
+    });
+
+    it('deve retornar 400 para consulta não concluída', async () => {
+      const { patient, professional, patientToken } = await setupUsers();
+
+      const appointment = await createAppointmentInDb(patient.id, professional.id);
+
+      await request(context.app.getHttpServer())
+        .get(`/appointments/${appointment.id}/certificate`)
+        .set('Authorization', `Bearer ${patientToken}`)
+        .expect(400);
+    });
+
+    it('deve retornar 404 para consulta inexistente', async () => {
+      const { patientToken } = await setupUsers();
+
+      await request(context.app.getHttpServer())
+        .get(`/appointments/${NON_EXISTENT_UUID}/certificate`)
+        .set('Authorization', `Bearer ${patientToken}`)
+        .expect(404);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // POST /appointments/:id/review
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  describe('POST /appointments/:id/review', () => {
+    it('deve permitir paciente criar review em consulta concluída', async () => {
+      const { patient, professional, patientToken } = await setupUsers();
+
+      const appointment = await createAppointmentInDb(patient.id, professional.id, {
+        status: AppointmentStatus.COMPLETED,
+        completedAt: new Date(),
+        startsAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        endsAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
+      });
+
+      const response = await request(context.app.getHttpServer())
+        .post(`/appointments/${appointment.id}/review`)
+        .set('Authorization', `Bearer ${patientToken}`)
+        .send({ rating: 5, comment: 'Excelente profissional!' })
+        .expect(201);
+
+      expect(response.body).toMatchObject({
+        appointmentId: appointment.id,
+        rating: 5,
+        comment: 'Excelente profissional!',
+      });
+      expect(response.body).toHaveProperty('id');
+    });
+
+    it('deve retornar 403 para profissional tentando criar review', async () => {
+      const { patient, professional, professionalToken } = await setupUsers();
+
+      const appointment = await createAppointmentInDb(patient.id, professional.id, {
+        status: AppointmentStatus.COMPLETED,
+        completedAt: new Date(),
+        startsAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        endsAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
+      });
+
+      await request(context.app.getHttpServer())
+        .post(`/appointments/${appointment.id}/review`)
+        .set('Authorization', `Bearer ${professionalToken}`)
+        .send({ rating: 5 })
+        .expect(403);
+    });
+
+    it('deve retornar 404 para consulta inexistente', async () => {
+      const { patientToken } = await setupUsers();
+
+      await request(context.app.getHttpServer())
+        .post(`/appointments/${NON_EXISTENT_UUID}/review`)
+        .set('Authorization', `Bearer ${patientToken}`)
+        .send({ rating: 5 })
         .expect(404);
     });
   });

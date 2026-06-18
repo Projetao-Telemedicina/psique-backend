@@ -1,13 +1,15 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { ApiCommonErrorResponses } from '../../common/swagger';
-import { appointmentResponseSchema } from './appointment.schemas';
+import { appointmentDetailResponseSchema } from './appointment.schemas';
 
 export function GetAppointmentByIdApiDocs(): MethodDecorator {
   return applyDecorators(
     ApiOperation({
       summary: 'Busca uma consulta pelo ID',
-      description: 'Retorna os detalhes completos de uma consulta específica.',
+      description:
+        'Retorna os detalhes completos de uma consulta específica, ' +
+        'incluindo dados aninhados do paciente (nome, avatarUrl) e do profissional (crp, especialidade, nome, avatarUrl).',
     }),
     ApiParam({
       name: 'id',
@@ -16,8 +18,8 @@ export function GetAppointmentByIdApiDocs(): MethodDecorator {
       description: 'ID da consulta',
     }),
     ApiOkResponse({
-      description: 'Consulta encontrada.',
-      schema: appointmentResponseSchema,
+      description: 'Consulta encontrada com dados do paciente e profissional.',
+      schema: appointmentDetailResponseSchema,
     }),
     ApiCommonErrorResponses({
       includeUnauthorized: true,
