@@ -132,6 +132,28 @@ enum CouponDistributionType {
   TARGETED
 }
 
+enum PaymentMethodType {
+  CARD
+  PIX
+  BOLETO
+  WALLET
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  CANCELED
+}
+
+enum PaymentPurpose {
+  APPOINTMENT
+  PLAN_SUBSCRIPTION
+  PROFILE_PROMOTION
+}
+
 // enum WalletTransactionType {
 //   REFUND_CREDIT
 //   APPOINTMENT_PAYMENT
@@ -142,28 +164,6 @@ enum CouponDistributionType {
 // enum WalletTransactionDirection {
 //   CREDIT
 //   DEBIT
-// }
-
-// enum PaymentMethodType {
-//   CARD
-//   PIX
-//   BOLETO
-//   WALLET
-// }
-
-// enum PaymentStatus {
-//   PENDING
-//   APPROVED
-//   FAILED
-//   REFUNDED
-//   PARTIALLY_REFUNDED
-//   CANCELED
-// }
-
-// enum PaymentPurpose {
-//   APPOINTMENT
-//   PLAN_SUBSCRIPTION
-//   PROFILE_PROMOTION
 // }
 
 // enum PromotionStatus {
@@ -218,6 +218,7 @@ model User {
   phone        String?
   bio          String?
   avatarUrl    String?    @map("avatar_url")
+  stripeCustomerId String? @unique @map("stripe_customer_id")
 
   cep          String?
   state        String?
@@ -237,9 +238,9 @@ model User {
   reviewedProfessionalRequests ProfessionalRequest[] @relation("ReviewedProfessionalRequests")
   requestedReschedules          AppointmentRescheduleRequest[]
   sentMessages                  Message[]
-  // paymentMethods                PaymentMethod[]
+  paymentMethods               PaymentMethod[]
   // subscriptions                 Subscription[]
-  // payments                      Payment[]
+  payments                     Payment[]
   userCoupons                   UserCoupon[]
   // notifications                 Notification[]
 
@@ -431,7 +432,7 @@ model Appointment {
   review             Review?
   chatRooms          ChatRoom[]
   // walletTransactions WalletTransaction[]
-  // payments           Payment[]
+  payments           Payment[]
   // videoCallSessions  VideoCallSession[]
 
   @@map("appointments")
@@ -610,7 +611,7 @@ model UserCoupon {
 
   coupon   Coupon    @relation(fields: [couponId], references: [id])
   user     User      @relation(fields: [userId], references: [id])
-  // payments Payment[]
+  payments Payment[]
 
   @@unique([couponId, userId]) // evita duplicata de distribuição do mesmo cupom para o mesmo usuário
   @@map("user_coupons")
@@ -644,24 +645,25 @@ model UserCoupon {
 //   @@map("wallet_transactions")
 // }
 
-// model PaymentMethod {
-//   id            String            @id @default(uuid()) @map("payment_method_id")
-//   userId        String            @map("user_id")
-//   type          PaymentMethodType
-//   gatewayToken  String            @map("gateway_token")
-//   brand         String?
-//   last4         String?
-//   holderName    String?           @map("holder_name")
-//   expiresMonth  Int?              @map("expires_month")
-//   expiresYear   Int?              @map("expires_year")
-//   isDefault     Boolean           @default(false) @map("is_default")
-//   createdAt     DateTime          @default(now()) @map("created_at")
+model PaymentMethod {
+  id            String            @id @default(uuid()) @map("payment_method_id")
+  userId        String            @map("user_id")
+  type          PaymentMethodType
+  gatewayToken  String            @unique @map("gateway_token")
+  brand         String?
+  last4         String?
+  holderName    String?           @map("holder_name")
+  expiresMonth  Int?              @map("expires_month")
+  expiresYear   Int?              @map("expires_year")
+  isDefault     Boolean           @default(false) @map("is_default")
+  createdAt     DateTime          @default(now()) @map("created_at")
 
-//   user     User      @relation(fields: [userId], references: [id])
-//   payments Payment[]
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments Payment[]
 
-//   @@map("payment_methods")
-// }
+  @@index([userId, isDefault])
+  @@map("payment_methods")
+}
 
 // model Plan {
 //   id           String   @id @default(uuid()) @map("plan_id")
@@ -724,33 +726,33 @@ model UserCoupon {
 //   @@map("professional_promotions")
 // }
 
-// model Payment {
-//   id                  String        @id @default(uuid()) @map("payment_id")
-//   userId              String        @map("user_id")
-//   paymentMethodId     String?       @map("payment_method_id")
-//   purpose             PaymentPurpose
-//   appointmentId       String?       @map("appointment_id")
-//   subscriptionId      String?       @map("subscription_id")
-//   promotionId         String?       @map("promotion_id")
-//   userCouponId        String?       @map("user_coupon_id")
-//   originalAmountCents Int           @map("original_amount_cents")
-//   discountAmountCents Int           @default(0) @map("discount_amount_cents")
-//   walletAmountCents   Int           @default(0) @map("wallet_amount_cents")
-//   finalAmountCents    Int           @map("final_amount_cents")
-//   status              PaymentStatus @default(PENDING)
-//   gatewayTransactionId String?      @map("gateway_transaction_id")
-//   createdAt           DateTime      @default(now()) @map("created_at")
-//   paidAt              DateTime?     @map("paid_at")
+model Payment {
+  id                   String        @id @default(uuid()) @map("payment_id")
+  userId               String        @map("user_id")
+  paymentMethodId      String?       @map("payment_method_id")
+  purpose              PaymentPurpose
+  appointmentId        String?       @unique @map("appointment_id")
+  subscriptionId       String?       @map("subscription_id")
+  promotionId          String?       @map("promotion_id")
+  userCouponId         String?       @map("user_coupon_id")
+  originalAmountCents  Int           @map("original_amount_cents")
+  discountAmountCents  Int           @default(0) @map("discount_amount_cents")
+  walletAmountCents    Int           @default(0) @map("wallet_amount_cents")
+  finalAmountCents     Int           @map("final_amount_cents")
+  status               PaymentStatus @default(PENDING)
+  gatewayTransactionId String?       @unique @map("gateway_transaction_id")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  paidAt               DateTime?     @map("paid_at")
 
-//   user          User                   @relation(fields: [userId], references: [id])
-//   paymentMethod PaymentMethod?         @relation(fields: [paymentMethodId], references: [id])
-//   appointment   Appointment?           @relation(fields: [appointmentId], references: [id])
-//   subscription  Subscription?          @relation(fields: [subscriptionId], references: [id])
-//   promotion     ProfessionalPromotion? @relation(fields: [promotionId], references: [id])
-//   userCoupon    UserCoupon?            @relation(fields: [userCouponId], references: [id])
+  user          User           @relation(fields: [userId], references: [id])
+  paymentMethod PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  appointment   Appointment?   @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  userCoupon    UserCoupon?    @relation(fields: [userCouponId], references: [id], onDelete: SetNull)
 
-//   @@map("payments")
-// }
+  @@index([userId, status])
+  @@index([purpose, status])
+  @@map("payments")
+}
 
 // model VideoCallSession {
 //   id             String          @id @default(uuid()) @map("session_id")
