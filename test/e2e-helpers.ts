@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import { ProfessionalApprovalStatus, Role, UserStatus } from '@prisma/client';
 import { AppModule } from '../src/app.module';
 import { GoogleCalendarService } from '../src/google-calendar/google-calendar.service';
+import { StripeService } from '../src/payments/stripe/stripe.service';
 import { PrismaService } from '../src/prisma/prisma.service';
 
 export type E2eAppContext = {
@@ -21,15 +22,48 @@ export const mockGoogleCalendarService = {
   deleteAppointmentEvent: jest.fn().mockResolvedValue(undefined),
 };
 
+export const mockStripeService = {
+  createCustomer: jest.fn().mockImplementation(({ email }: { email: string }) => ({
+    id: `cus_${email.replace(/[^a-zA-Z0-9]/g, '').slice(0, 12)}`,
+  })),
+  createSetupIntent: jest.fn().mockResolvedValue({
+    id: 'seti_test_123',
+    clientSecret: 'seti_test_123_secret',
+  }),
+  attachPaymentMethod: jest.fn().mockResolvedValue(undefined),
+  detachPaymentMethod: jest.fn().mockResolvedValue(undefined),
+  getCardPaymentMethodDetails: jest.fn().mockImplementation((paymentMethodId: string) => ({
+    id: paymentMethodId,
+    brand: 'visa',
+    last4: '4242',
+    expMonth: 12,
+    expYear: 2030,
+    holderName: 'Patient Test',
+  })),
+  updateDefaultPaymentMethod: jest.fn().mockResolvedValue(undefined),
+  createAndConfirmPaymentIntent: jest.fn().mockResolvedValue({
+    id: 'pi_test_123',
+    status: 'succeeded',
+    clientSecret: 'pi_test_123_secret',
+  }),
+  constructWebhookEvent: jest
+    .fn()
+    .mockImplementation((payload: Buffer): Record<string, unknown> => {
+      return JSON.parse(payload.toString('utf8')) as Record<string, unknown>;
+    }),
+};
+
 export async function createE2eApp(): Promise<E2eAppContext> {
   const moduleFixture = await Test.createTestingModule({
     imports: [AppModule],
   })
     .overrideProvider(GoogleCalendarService)
     .useValue(mockGoogleCalendarService)
+    .overrideProvider(StripeService)
+    .useValue(mockStripeService)
     .compile();
 
-  const app = moduleFixture.createNestApplication();
+  const app = moduleFixture.createNestApplication({ rawBody: true });
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -48,6 +82,8 @@ export async function createE2eApp(): Promise<E2eAppContext> {
 }
 
 export async function resetDatabase(prisma: PrismaService): Promise<void> {
+  await prisma.payment.deleteMany();
+  await prisma.paymentMethod.deleteMany();
   await prisma.messageAttachment.deleteMany();
   await prisma.message.deleteMany();
   await prisma.chatRoom.deleteMany();

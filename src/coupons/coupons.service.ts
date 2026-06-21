@@ -1,11 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { CouponCategory } from '@prisma/client';
+import { CouponCategory, Prisma } from '@prisma/client';
 import { PrismaService } from '@/prisma/index';
 import { CreateCouponDto } from './dto/create-coupon.dto';
 import { UpdateCouponDto } from './dto/update-coupon.dto';
 
 const DEFAULT_MAX_DISCOUNT_CENTS = 10000;
+const COUPON_RESERVATION_WINDOW_MS = 15 * 60 * 1000;
 
 export interface ApplyCouponResult {
   originalAmountCents: number;
@@ -16,6 +17,32 @@ export interface ApplyCouponResult {
   couponStatus: string;
   warning: string | null;
 }
+
+export interface ApplicableCouponPreview {
+  userCouponId: string;
+  result: ApplyCouponResult;
+}
+
+type UserCouponWithCoupon = {
+  id: string;
+  userId: string;
+  couponId: string;
+  isUsed: boolean;
+  reservedAt: Date | null;
+  coupon: {
+    code: string;
+    expiresAt: Date;
+    category: CouponCategory;
+    discountType: string;
+    discountValue: unknown;
+    maxDiscountCents: number | null;
+    minPurchaseCents: number | null;
+    firstMonthOnly: boolean;
+    isActive: boolean;
+    maxUses: number | null;
+    currentUses: number;
+  };
+};
 
 @Injectable()
 export class CouponsService {
@@ -128,52 +155,22 @@ export class CouponsService {
       include: { coupon: true },
     });
 
-    if (!userCoupon) {
-      throw new BadRequestException('Cupom não encontrado');
-    }
-
-    if (userCoupon.userId !== userId) {
-      throw new BadRequestException('Você não possui este cupom');
-    }
-
-    if (userCoupon.isUsed) {
-      throw new BadRequestException('Este cupom já foi utilizado');
-    }
-
-    if (userCoupon.coupon.expiresAt <= new Date()) {
-      throw new BadRequestException('Este cupom não é mais válido');
-    }
-
-    if (userCoupon.coupon.category !== category) {
-      throw new BadRequestException('Este cupom não é válido para esta categoria');
-    }
-
-    if (!userCoupon.coupon.isActive) {
-      throw new BadRequestException('Este cupom não está mais ativo');
-    }
-
-    if (
-      userCoupon.coupon.minPurchaseCents !== null &&
-      amountCents < userCoupon.coupon.minPurchaseCents
-    ) {
-      throw new BadRequestException('Valor mínimo para este cupom não atingido');
-    }
-
-    const discountValue = Number(userCoupon.coupon.discountValue);
+    this.ensureCouponCanBeApplied(userCoupon, userId, category, amountCents);
+    const applicableUserCoupon = userCoupon as UserCouponWithCoupon;
 
     const { discountCents, warning } = this.calculateDiscount(
       amountCents,
-      userCoupon.coupon.discountType,
-      discountValue,
-      userCoupon.coupon.maxDiscountCents,
-      userCoupon.coupon.firstMonthOnly
+      applicableUserCoupon.coupon.discountType,
+      Number(applicableUserCoupon.coupon.discountValue),
+      applicableUserCoupon.coupon.maxDiscountCents,
+      applicableUserCoupon.coupon.firstMonthOnly,
     );
 
     return {
       originalAmountCents: amountCents,
       discountAppliedCents: discountCents,
       finalAmountCents: amountCents - discountCents,
-      couponCode: userCoupon.coupon.code,
+      couponCode: applicableUserCoupon.coupon.code,
       message: 'Desconto aplicado',
       couponStatus: 'applied',
       warning,
@@ -191,39 +188,92 @@ export class CouponsService {
       include: { coupon: true },
     });
 
-    if (!userCoupon) {
-      throw new BadRequestException('Cupom não encontrado');
-    }
-
-    if (userCoupon.userId !== userId) {
-      throw new BadRequestException('Você não possui este cupom');
-    }
-
-    if (userCoupon.isUsed) {
-      throw new BadRequestException('Este cupom já foi utilizado');
-    }
-
-    if (userCoupon.coupon.expiresAt <= new Date()) {
-      throw new BadRequestException('Este cupom não é mais válido');
-    }
-
-    if (userCoupon.coupon.category !== category) {
-      throw new BadRequestException('Este cupom não é válido para esta categoria');
-    }
-
-    if (!userCoupon.coupon.isActive) {
-      throw new BadRequestException('Este cupom não está mais ativo');
-    }
-
-    if (
-      amountCents !== undefined &&
-      userCoupon.coupon.minPurchaseCents !== null &&
-      amountCents < userCoupon.coupon.minPurchaseCents
-    ) {
-      throw new BadRequestException('Valor mínimo para este cupom não atingido');
-    }
+    this.ensureCouponCanBeApplied(userCoupon, userId, category, amountCents);
 
     return { valid: true, userCoupon };
+  }
+
+  async findBestApplicableCoupon(
+    userId: string,
+    category: CouponCategory,
+    amountCents: number,
+  ): Promise<ApplicableCouponPreview | null> {
+    const userCoupons = await this.prisma.userCoupon.findMany({
+      where: {
+        userId,
+        isUsed: false,
+        reservedAt: null,
+        coupon: {
+          isActive: true,
+          expiresAt: { gt: new Date() },
+          category,
+        },
+      },
+      include: {
+        coupon: true,
+      },
+      orderBy: {
+        coupon: { expiresAt: 'asc' },
+      },
+    });
+
+    const candidates = userCoupons
+      .filter((userCoupon) => {
+        if (
+          userCoupon.coupon.maxUses !== null &&
+          userCoupon.coupon.currentUses >= userCoupon.coupon.maxUses
+        ) {
+          return false;
+        }
+
+        if (
+          userCoupon.coupon.minPurchaseCents !== null &&
+          amountCents < userCoupon.coupon.minPurchaseCents
+        ) {
+          return false;
+        }
+
+        return true;
+      })
+      .map((userCoupon) => {
+        const { discountCents, warning } = this.calculateDiscount(
+          amountCents,
+          userCoupon.coupon.discountType,
+          Number(userCoupon.coupon.discountValue),
+          userCoupon.coupon.maxDiscountCents,
+          userCoupon.coupon.firstMonthOnly,
+        );
+
+        return {
+          userCouponId: userCoupon.id,
+          expiresAt: userCoupon.coupon.expiresAt,
+          result: {
+            originalAmountCents: amountCents,
+            discountAppliedCents: discountCents,
+            finalAmountCents: amountCents - discountCents,
+            couponCode: userCoupon.coupon.code,
+            message: 'Desconto aplicado automaticamente',
+            couponStatus: 'auto_applied',
+            warning,
+          } satisfies ApplyCouponResult,
+        };
+      })
+      .sort((left, right) => {
+        if (right.result.discountAppliedCents !== left.result.discountAppliedCents) {
+          return right.result.discountAppliedCents - left.result.discountAppliedCents;
+        }
+
+        return left.expiresAt.getTime() - right.expiresAt.getTime();
+      });
+
+    if (candidates.length === 0) {
+      return null;
+    }
+
+    return {
+      userCouponId: candidates[0].userCouponId,
+      result: candidates[0].result,
+    };
   }
 
   calculateDiscount(
@@ -254,24 +304,18 @@ export class CouponsService {
   async reserveCoupon(userId: string, userCouponId: string) {
     const userCoupon = await this.prisma.userCoupon.findUnique({
       where: { id: userCouponId },
-      include: { coupon: { select: { expiresAt: true } } },
+      include: { coupon: true },
     });
 
     if (!userCoupon) {
       throw new BadRequestException('Cupom não encontrado');
     }
 
-    if (userCoupon.userId !== userId) {
-      throw new BadRequestException('Você não possui este cupom');
-    }
-
-    if (userCoupon.isUsed) {
-      throw new BadRequestException('Este cupom já foi utilizado');
-    }
-
-    if (userCoupon.coupon.expiresAt <= new Date()) {
-      throw new BadRequestException('Este cupom não é mais válido');
-    }
+    this.ensureCouponCanBeApplied(
+      userCoupon,
+      userId,
+      userCoupon.coupon.category,
+    );
 
     if (userCoupon.reservedAt !== null) {
       throw new BadRequestException('Este cupom já está reservado');
@@ -283,34 +327,62 @@ export class CouponsService {
     });
   }
 
+  async releaseReservation(userCouponId: string) {
+    return this.prisma.userCoupon.update({
+      where: { id: userCouponId },
+      data: { reservedAt: null },
+    });
+  }
+
   async consumeCoupon(userCouponId: string) {
     return this.prisma.$transaction(async (tx) => {
-      const uc = await tx.userCoupon.findUnique({
-        where: { id: userCouponId },
-        include: { coupon: true },
-      });
+      return this.consumeCouponInTransaction(tx, userCouponId);
+    });
+  }
 
-      if (!uc) {
-        throw new BadRequestException('Cupom não encontrado');
-      }
+  async consumeCouponInTransaction(
+    tx: Prisma.TransactionClient,
+    userCouponId: string,
+  ) {
+    const userCoupon = await tx.userCoupon.findUnique({
+      where: { id: userCouponId },
+      include: { coupon: true },
+    });
 
-      if (uc.isUsed) {
-        throw new BadRequestException('Este cupom já foi utilizado');
-      }
+    if (!userCoupon) {
+      throw new BadRequestException('Cupom não encontrado');
+    }
 
-      if (uc.coupon.maxUses !== null && uc.coupon.currentUses >= uc.coupon.maxUses) {
-        throw new BadRequestException('Limite de usos do cupom atingido');
-      }
+    if (userCoupon.isUsed) {
+      throw new BadRequestException('Este cupom já foi utilizado');
+    }
 
-      await tx.coupon.update({
-        where: { id: uc.couponId },
-        data: { currentUses: { increment: 1 } },
-      });
+    if (
+      userCoupon.reservedAt !== null &&
+      userCoupon.reservedAt.getTime() < Date.now() - COUPON_RESERVATION_WINDOW_MS
+    ) {
+      throw new BadRequestException('A reserva deste cupom expirou');
+    }
 
-      return tx.userCoupon.update({
-        where: { id: userCouponId },
-        data: { isUsed: true, usedAt: new Date(), reservedAt: null },
-      });
+    if (
+      userCoupon.coupon.maxUses !== null &&
+      userCoupon.coupon.currentUses >= userCoupon.coupon.maxUses
+    ) {
+      throw new BadRequestException('Limite de usos do cupom atingido');
+    }
+
+    await tx.coupon.update({
+      where: { id: userCoupon.couponId },
+      data: { currentUses: { increment: 1 } },
+    });
+
+    return tx.userCoupon.update({
+      where: { id: userCouponId },
+      data: {
+        isUsed: true,
+        usedAt: new Date(),
+        reservedAt: null,
+      },
     });
   }
 
@@ -350,7 +422,7 @@ export class CouponsService {
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async releaseExpiredReservations() {
-    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+    const fifteenMinutesAgo = new Date(Date.now() - COUPON_RESERVATION_WINDOW_MS);
 
     const result = await this.prisma.userCoupon.updateMany({
       where: {
@@ -361,5 +433,51 @@ export class CouponsService {
     });
 
     return result.count;
+  }
+
+  private ensureCouponCanBeApplied(
+    userCoupon: UserCouponWithCoupon | null,
+    userId: string,
+    category: CouponCategory,
+    amountCents?: number,
+  ) {
+    if (!userCoupon) {
+      throw new BadRequestException('Cupom não encontrado');
+    }
+
+    if (userCoupon.userId !== userId) {
+      throw new BadRequestException('Você não possui este cupom');
+    }
+
+    if (userCoupon.isUsed) {
+      throw new BadRequestException('Este cupom já foi utilizado');
+    }
+
+    if (userCoupon.coupon.expiresAt <= new Date()) {
+      throw new BadRequestException('Este cupom não é mais válido');
+    }
+
+    if (userCoupon.coupon.category !== category) {
+      throw new BadRequestException('Este cupom não é válido para esta categoria');
+    }
+
+    if (!userCoupon.coupon.isActive) {
+      throw new BadRequestException('Este cupom não está mais ativo');
+    }
+
+    if (
+      userCoupon.coupon.maxUses !== null &&
+      userCoupon.coupon.currentUses >= userCoupon.coupon.maxUses
+    ) {
+      throw new BadRequestException('Limite de usos do cupom atingido');
+    }
+
+    if (
+      amountCents !== undefined &&
+      userCoupon.coupon.minPurchaseCents !== null &&
+      amountCents < userCoupon.coupon.minPurchaseCents
+    ) {
+      throw new BadRequestException('Valor mínimo para este cupom não atingido');
+    }
   }
 }

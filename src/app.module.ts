@@ -18,6 +18,7 @@ import { ReviewModule } from './review/review.module';
 import { PanicButtonModule } from './emergency/panic-button.module';
 import { ChatModule } from './chat/chat.module';
 import { CouponsModule } from './coupons/coupons.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -37,7 +38,8 @@ import { CouponsModule } from './coupons/coupons.module';
     ReviewModule,
     PanicButtonModule,
     ChatModule,
-    CouponsModule
+    CouponsModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
