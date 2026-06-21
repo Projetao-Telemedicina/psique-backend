@@ -350,6 +350,7 @@ describe('CouponsService', () => {
             id: 'uc-001',
             couponId: 'c-001',
             isUsed: false,
+            reservedAt: null,
             coupon: { maxUses: 10, currentUses: 5 },
           }),
           update: jest.fn().mockResolvedValue({
@@ -387,6 +388,7 @@ describe('CouponsService', () => {
             id: 'uc-001',
             couponId: 'c-001',
             isUsed: true,
+            reservedAt: null,
             coupon: { maxUses: 10, currentUses: 5 },
           }),
           update: jest.fn(),
@@ -408,6 +410,7 @@ describe('CouponsService', () => {
             id: 'uc-001',
             couponId: 'c-001',
             isUsed: false,
+            reservedAt: null,
             coupon: { maxUses: 5, currentUses: 5 },
           }),
           update: jest.fn(),
@@ -520,7 +523,13 @@ describe('CouponsService', () => {
         userId: 'user-001',
         isUsed: false,
         reservedAt: null,
-        coupon: { expiresAt: new Date('2027-06-01') },
+        coupon: {
+          expiresAt: new Date('2027-06-01'),
+          category: 'SINGLE_APPOINTMENT',
+          isActive: true,
+          maxUses: null,
+          currentUses: 0,
+        },
       });
       mockUpdate.mockResolvedValue({
         id: 'uc-001',
