@@ -98,15 +98,21 @@ describe('CouponsController (e2e)', () => {
     };
   }
 
-  async function claimCoupon(patientId: string, couponId: string) {
-    const token = await createAuthToken(context.app, context.prisma, {
-      id: patientId,
-      role: Role.PATIENT,
-    });
+  async function claimCoupon(
+    patientId: string,
+    couponId: string,
+    token?: string,
+  ) {
+    const authToken =
+      token ??
+      (await createAuthToken(context.app, context.prisma, {
+        id: patientId,
+        role: Role.PATIENT,
+      }));
 
     const response = await request(context.app.getHttpServer())
       .post(`/coupons/${couponId}/claim`)
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${authToken}`)
       .expect(201);
 
     return response.body as {
@@ -360,7 +366,7 @@ describe('CouponsController (e2e)', () => {
     it('deve listar apenas cupons do paciente logado', async () => {
       const { patient, token } = await createPatientSession();
       const coupon = await createCoupon();
-      await claimCoupon(patient.id, coupon.id);
+      await claimCoupon(patient.id, coupon.id, token);
 
       const response = await request(context.app.getHttpServer())
         .get('/coupons/mine')
@@ -424,7 +430,7 @@ describe('CouponsController (e2e)', () => {
     it('paciente deve reservar seu cupom com sucesso', async () => {
       const { patient, token } = await createPatientSession();
       const coupon = await createCoupon();
-      const userCoupon = await claimCoupon(patient.id, coupon.id);
+      const userCoupon = await claimCoupon(patient.id, coupon.id, token);
 
       const response = await request(context.app.getHttpServer())
         .post(`/coupons/${userCoupon.id}/reserve`)
@@ -438,7 +444,7 @@ describe('CouponsController (e2e)', () => {
     it('deve rejeitar reserva de cupom ja reservado', async () => {
       const { patient, token } = await createPatientSession();
       const coupon = await createCoupon();
-      const userCoupon = await claimCoupon(patient.id, coupon.id);
+      const userCoupon = await claimCoupon(patient.id, coupon.id, token);
 
       // Primeira reserva
       await request(context.app.getHttpServer())
@@ -476,7 +482,7 @@ describe('CouponsController (e2e)', () => {
     ) {
       const { patient, token } = await createPatientSession();
       const coupon = await createCoupon(couponOverrides);
-      const userCoupon = await claimCoupon(patient.id, coupon.id);
+      const userCoupon = await claimCoupon(patient.id, coupon.id, token);
 
       return { patient, token, coupon, userCoupon };
     }
