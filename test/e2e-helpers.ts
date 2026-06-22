@@ -46,6 +46,28 @@ export const mockStripeService = {
     status: 'succeeded',
     clientSecret: 'pi_test_123_secret',
   }),
+  createSubscription: jest.fn().mockResolvedValue({
+    id: 'sub_test_123',
+    status: 'active',
+    currentPeriodStart: new Date('2026-06-12T20:35:00.000Z'),
+    currentPeriodEnd: new Date('2026-07-12T20:35:00.000Z'),
+    cancelAtPeriodEnd: false,
+    canceledAt: null,
+    endedAt: null,
+    paymentIntentId: 'pi_sub_test_123',
+    clientSecret: 'pi_sub_test_123_secret',
+  }),
+  cancelSubscriptionAtPeriodEnd: jest.fn().mockResolvedValue({
+    id: 'sub_test_123',
+    status: 'active',
+    currentPeriodStart: new Date('2026-06-12T20:35:00.000Z'),
+    currentPeriodEnd: new Date('2026-07-12T20:35:00.000Z'),
+    cancelAtPeriodEnd: true,
+    canceledAt: null,
+    endedAt: null,
+    paymentIntentId: null,
+    clientSecret: null,
+  }),
   constructWebhookEvent: jest
     .fn()
     .mockImplementation((payload: Buffer): Record<string, unknown> => {
@@ -83,6 +105,10 @@ export async function createE2eApp(): Promise<E2eAppContext> {
 
 export async function resetDatabase(prisma: PrismaService): Promise<void> {
   await prisma.payment.deleteMany();
+  await prisma.professionalPromotion.deleteMany();
+  await prisma.promotionPlan.deleteMany();
+  await prisma.subscription.deleteMany();
+  await prisma.plan.deleteMany();
   await prisma.paymentMethod.deleteMany();
   await prisma.messageAttachment.deleteMany();
   await prisma.message.deleteMany();

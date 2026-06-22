@@ -17,6 +17,18 @@ export type StripePaymentIntentResult = {
   clientSecret: string | null;
 };
 
+export type StripeSubscriptionResult = {
+  id: string;
+  status: string;
+  currentPeriodStart: Date | null;
+  currentPeriodEnd: Date | null;
+  cancelAtPeriodEnd: boolean;
+  canceledAt: Date | null;
+  endedAt: Date | null;
+  paymentIntentId: string | null;
+  clientSecret: string | null;
+};
+
 @Injectable()
 export class StripeService {
   private readonly stripe: InstanceType<typeof Stripe>;
@@ -108,6 +120,127 @@ export class StripeService {
       status: paymentIntent.status,
       clientSecret: paymentIntent.client_secret,
     };
+  }
+
+  async createSubscription(input: {
+    customerId: string;
+    priceId: string;
+    productId: string;
+    paymentMethodId: string;
+    metadata: Record<string, string>;
+    discountAmountCents?: number;
+  }): Promise<StripeSubscriptionResult> {
+    const subscription = (await this.stripe.subscriptions.create({
+      customer: input.customerId,
+      collection_method: 'charge_automatically',
+      default_payment_method: input.paymentMethodId,
+      payment_behavior: 'default_incomplete',
+      items: [
+        {
+          price: input.priceId,
+        },
+      ],
+      ...(input.discountAmountCents && input.discountAmountCents > 0
+        ? {
+            add_invoice_items: [
+              {
+                price_data: {
+                  currency: 'brl',
+                  product: input.productId,
+                  unit_amount: -input.discountAmountCents,
+                },
+                quantity: 1,
+              },
+            ],
+          }
+        : {}),
+      payment_settings: {
+        payment_method_types: ['card'],
+        save_default_payment_method: 'on_subscription',
+      },
+      metadata: input.metadata,
+      expand: ['latest_invoice.payment_intent'],
+    })) as {
+      id: string;
+      status: string;
+      latest_invoice?:
+        | ({
+            payment_intent?:
+              | {
+                  id: string;
+                  client_secret?: string | null;
+                }
+              | string
+              | null;
+          } & Record<string, unknown>)
+        | string
+        | null;
+      current_period_start?: number;
+      current_period_end?: number;
+      cancel_at_period_end: boolean;
+      canceled_at: number | null;
+      ended_at: number | null;
+    };
+
+    const latestInvoice =
+      subscription.latest_invoice && typeof subscription.latest_invoice !== 'string'
+        ? subscription.latest_invoice
+        : null;
+    const paymentIntent =
+      latestInvoice?.payment_intent &&
+      typeof latestInvoice.payment_intent !== 'string'
+        ? latestInvoice.payment_intent
+        : null;
+
+    return {
+      id: subscription.id,
+      status: subscription.status,
+      currentPeriodStart: subscription.current_period_start
+        ? new Date(subscription.current_period_start * 1000)
+        : null,
+      currentPeriodEnd: subscription.current_period_end
+        ? new Date(subscription.current_period_end * 1000)
+        : null,
+      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      canceledAt: subscription.canceled_at
+        ? new Date(subscription.canceled_at * 1000)
+        : null,
+      endedAt: subscription.ended_at ? new Date(subscription.ended_at * 1000) : null,
+      paymentIntentId: paymentIntent?.id ?? null,
+      clientSecret: paymentIntent?.client_secret ?? null,
+    };
+  }
+
+  async cancelSubscriptionAtPeriodEnd(subscriptionId: string) {
+    const subscription = (await this.stripe.subscriptions.update(subscriptionId, {
+      cancel_at_period_end: true,
+    })) as {
+      id: string;
+      status: string;
+      current_period_start?: number;
+      current_period_end?: number;
+      cancel_at_period_end: boolean;
+      canceled_at: number | null;
+      ended_at: number | null;
+    };
+
+    return {
+      id: subscription.id,
+      status: subscription.status,
+      currentPeriodStart: subscription.current_period_start
+        ? new Date(subscription.current_period_start * 1000)
+        : null,
+      currentPeriodEnd: subscription.current_period_end
+        ? new Date(subscription.current_period_end * 1000)
+        : null,
+      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      canceledAt: subscription.canceled_at
+        ? new Date(subscription.canceled_at * 1000)
+        : null,
+      endedAt: subscription.ended_at ? new Date(subscription.ended_at * 1000) : null,
+      paymentIntentId: null,
+      clientSecret: null,
+    } satisfies StripeSubscriptionResult;
   }
 
   constructWebhookEvent(payload: Buffer, signature: string) {

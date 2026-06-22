@@ -154,6 +154,19 @@ enum PaymentPurpose {
   PROFILE_PROMOTION
 }
 
+enum PlanBillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum PromotionStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELED
+  FAILED
+}
+
 // enum WalletTransactionType {
 //   REFUND_CREDIT
 //   APPOINTMENT_PAYMENT
@@ -166,21 +179,13 @@ enum PaymentPurpose {
 //   DEBIT
 // }
 
-// enum PromotionStatus {
-//   PENDING
-//   ACTIVE
-//   EXPIRED
-//   CANCELED
-//   FAILED
-// }
-
-// enum SubscriptionStatus {
-//   PENDING
-//   ACTIVE
-//   OVERDUE
-//   CANCELED
-//   EXPIRED
-// }
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  OVERDUE
+  CANCELED
+  EXPIRED
+}
 
 // enum VideoCallStatus {
 //   WAITING
@@ -239,7 +244,7 @@ model User {
   requestedReschedules          AppointmentRescheduleRequest[]
   sentMessages                  Message[]
   paymentMethods               PaymentMethod[]
-  // subscriptions                 Subscription[]
+  subscriptions                Subscription[]
   payments                     Payment[]
   userCoupons                   UserCoupon[]
   // notifications                 Notification[]
@@ -294,6 +299,8 @@ model ProfessionalProfile {
   gapBetweenAppointmentsMinutes Int                        @default(0) @map("gap_between_appointments_minutes")
   scoreAvg                      Decimal                    @default(0) @db.Decimal(4, 2) @map("score_avg")
   reviewCount                   Int                        @default(0) @map("review_count")
+  isPromoted                    Boolean                    @default(false) @map("is_promoted")
+  promotionEndsAt               DateTime?                  @map("promotion_ends_at")
   createdAt                     DateTime                   @default(now()) @map("created_at")
   updatedAt                     DateTime                   @updatedAt @map("updated_at")
 
@@ -308,8 +315,8 @@ model ProfessionalProfile {
   reviews         Review[]
   acceptedEmergencyRequests EmergencyRequest[] @relation("EmergencyMatchedProfessional")
   emergencyOffers EmergencyOffer[]
+  promotions      ProfessionalPromotion[]
   // chatRooms       ChatRoom[]
-  // promotions      ProfessionalPromotion[]
   // acceptedPanics  PanicRequest[]      @relation("AcceptedProfessional")
   // panicOffers     PanicRequestOffer[]
   questionnaire   ProfessionalQuestionnaire?
@@ -665,66 +672,81 @@ model PaymentMethod {
   @@map("payment_methods")
 }
 
-// model Plan {
-//   id           String   @id @default(uuid()) @map("plan_id")
-//   name         String
-//   description  String?
-//   priceCents   Int      @map("price_cents")
-//   billingCycle String   @map("billing_cycle")
-//   isActive     Boolean  @default(true) @map("is_active")
-//   createdAt    DateTime @default(now()) @map("created_at")
+model Plan {
+  id              String          @id @default(uuid()) @map("plan_id")
+  name            String
+  description     String?
+  priceCents      Int             @map("price_cents")
+  billingCycle    PlanBillingCycle @map("billing_cycle")
+  benefits        String[]
+  stripeProductId String          @unique @map("stripe_product_id")
+  stripePriceId   String          @unique @map("stripe_price_id")
+  isActive        Boolean         @default(true) @map("is_active")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
 
-//   subscriptions Subscription[]
+  subscriptions Subscription[]
 
-//   @@map("plans")
-// }
+  @@map("plans")
+}
 
-// model Subscription {
-//   id                 String             @id @default(uuid()) @map("subscription_id")
-//   userId             String             @map("user_id")
-//   planId             String             @map("plan_id")
-//   status             SubscriptionStatus @default(PENDING)
-//   startedAt          DateTime?          @map("started_at")
-//   currentPeriodStart DateTime?          @map("current_period_start")
-//   currentPeriodEnd   DateTime?          @map("current_period_end")
-//   canceledAt         DateTime?          @map("canceled_at")
-//   createdAt          DateTime           @default(now()) @map("created_at")
+model Subscription {
+  id                 String             @id @default(uuid()) @map("subscription_id")
+  userId             String             @map("user_id")
+  planId             String             @map("plan_id")
+  status             SubscriptionStatus @default(PENDING)
+  stripeSubscriptionId String?          @unique @map("stripe_subscription_id")
+  startedAt          DateTime?          @map("started_at")
+  currentPeriodStart DateTime?          @map("current_period_start")
+  currentPeriodEnd   DateTime?          @map("current_period_end")
+  cancelAtPeriodEnd  Boolean            @default(false) @map("cancel_at_period_end")
+  canceledAt         DateTime?          @map("canceled_at")
+  endedAt            DateTime?          @map("ended_at")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
 
-//   user     User      @relation(fields: [userId], references: [id])
-//   plan     Plan      @relation(fields: [planId], references: [id])
-//   payments Payment[]
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan     Plan      @relation(fields: [planId], references: [id])
+  payments Payment[]
 
-//   @@map("subscriptions")
-// }
+  @@index([userId, status])
+  @@index([status, currentPeriodEnd])
+  @@map("subscriptions")
+}
 
-// model PromotionPlan {
-//   id           String  @id @default(uuid()) @map("promotion_plan_id")
-//   name         String
-//   description  String?
-//   priceCents   Int     @map("price_cents")
-//   durationDays Int     @map("duration_days")
-//   isActive     Boolean @default(true) @map("is_active")
+model PromotionPlan {
+  id           String   @id @default(uuid()) @map("promotion_plan_id")
+  name         String
+  description  String?
+  priceCents   Int      @map("price_cents")
+  durationDays Int      @map("duration_days")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
-//   promotions ProfessionalPromotion[]
+  promotions ProfessionalPromotion[]
 
-//   @@map("promotion_plans")
-// }
+  @@map("promotion_plans")
+}
 
-// model ProfessionalPromotion {
-//   id              String          @id @default(uuid()) @map("promotion_id")
-//   professionalId  String          @map("professional_id")
-//   promotionPlanId String          @map("promotion_plan_id")
-//   status          PromotionStatus @default(PENDING)
-//   startsAt        DateTime?       @map("starts_at")
-//   endsAt          DateTime?       @map("ends_at")
-//   createdAt       DateTime        @default(now()) @map("created_at")
+model ProfessionalPromotion {
+  id              String          @id @default(uuid()) @map("promotion_id")
+  professionalId  String          @map("professional_id")
+  promotionPlanId String          @map("promotion_plan_id")
+  status          PromotionStatus @default(PENDING)
+  startsAt        DateTime?       @map("starts_at")
+  endsAt          DateTime?       @map("ends_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
 
-//   professional  ProfessionalProfile @relation(fields: [professionalId], references: [userId])
-//   promotionPlan PromotionPlan       @relation(fields: [promotionPlanId], references: [id])
-//   payments      Payment[]
+  professional  ProfessionalProfile @relation(fields: [professionalId], references: [userId], onDelete: Cascade)
+  promotionPlan PromotionPlan       @relation(fields: [promotionPlanId], references: [id])
+  payments      Payment[]
 
-//   @@map("professional_promotions")
-// }
+  @@index([professionalId, status])
+  @@index([status, endsAt])
+  @@map("professional_promotions")
+}
 
 model Payment {
   id                   String        @id @default(uuid()) @map("payment_id")
@@ -747,6 +769,8 @@ model Payment {
   user          User           @relation(fields: [userId], references: [id])
   paymentMethod PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
   appointment   Appointment?   @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  subscription  Subscription?  @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  promotion     ProfessionalPromotion? @relation(fields: [promotionId], references: [id], onDelete: SetNull)
   userCoupon    UserCoupon?    @relation(fields: [userCouponId], references: [id], onDelete: SetNull)
 
   @@index([userId, status])

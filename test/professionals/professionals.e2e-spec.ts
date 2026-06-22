@@ -83,6 +83,44 @@ describe('ProfessionalsController (e2e)', () => {
     });
   }
 
+  async function promoteProfessional(
+    professionalId: string,
+    overrides: Partial<{
+      durationDays: number;
+    }> = {},
+  ) {
+    const now = new Date('2026-06-16T10:35:00.000Z');
+    const endsAt = new Date(now);
+    endsAt.setUTCDate(endsAt.getUTCDate() + (overrides.durationDays ?? 7));
+
+    const promotionPlan = await context.prisma.promotionPlan.create({
+      data: {
+        name: 'Impulsionamento teste',
+        description: 'Plano usado para validar a vitrine pública.',
+        priceCents: 2990,
+        durationDays: overrides.durationDays ?? 7,
+      },
+    });
+
+    await context.prisma.professionalPromotion.create({
+      data: {
+        professionalId,
+        promotionPlanId: promotionPlan.id,
+        status: 'ACTIVE',
+        startsAt: now,
+        endsAt,
+      },
+    });
+
+    await context.prisma.professionalProfile.update({
+      where: { userId: professionalId },
+      data: {
+        isPromoted: true,
+        promotionEndsAt: endsAt,
+      },
+    });
+  }
+
   async function createAdminUser() {
     const response = await request(context.app.getHttpServer())
       .post('/users')
@@ -138,9 +176,10 @@ describe('ProfessionalsController (e2e)', () => {
     });
   });
 
-  it('GET /professionals lists approved professionals ordered by scoreAvg', async () => {
+  it('GET /professionals lists approved professionals prioritizing promoted profiles', async () => {
     const lowerScore = await createApprovedProfessional('Dra. Clara', 3.5);
     const higherScore = await createApprovedProfessional('Dr. Hugo', 4.8);
+    await promoteProfessional(lowerScore.id);
 
     await context.prisma.user.create({
       data: {
@@ -169,13 +208,16 @@ describe('ProfessionalsController (e2e)', () => {
 
     expect(response.body).toHaveLength(2);
     expect(response.body[0]).toMatchObject({
-      userId: higherScore.id,
+      userId: lowerScore.id,
+      isPromoted: true,
     });
     expect(response.body[1]).toMatchObject({
-      userId: lowerScore.id,
+      userId: higherScore.id,
+      isPromoted: false,
     });
-    expect(Number(response.body[0].scoreAvg)).toBeCloseTo(4.8, 5);
-    expect(Number(response.body[1].scoreAvg)).toBeCloseTo(3.5, 5);
+    expect(response.body[0].promotionEndsAt).not.toBeNull();
+    expect(Number(response.body[0].scoreAvg)).toBeCloseTo(3.5, 5);
+    expect(Number(response.body[1].scoreAvg)).toBeCloseTo(4.8, 5);
   });
 
   it('PATCH /professionals/me lets a professional update their own profile', async () => {
