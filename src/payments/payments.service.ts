@@ -3,15 +3,17 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { PaymentStatus, Role } from '@prisma/client';
 import { AppointmentService } from '@/appointment/appointment.service';
 import { CouponsService } from '@/coupons/coupons.service';
 import { PrismaService } from '@/prisma';
-import { PaymentStatus, Role } from '@prisma/client';
 import { CheckoutAppointmentDto } from './dto/checkout-appointment.dto';
 import { PaymentMethodsService } from './payment-methods.service';
+import { PromotionsService } from './promotions.service';
 import { StripeService } from './stripe/stripe.service';
+import { SubscriptionsService } from './subscriptions.service';
 
-const PAYMENT_FAILURE_REASON = 'Pagamento não aprovado.';
+const PAYMENT_FAILURE_REASON = 'Pagamento nÃ£o aprovado.';
 
 type StripeWebhookPaymentIntent = {
   id: string;
@@ -28,6 +30,8 @@ export class PaymentsService {
     private readonly couponsService: CouponsService,
     private readonly paymentMethodsService: PaymentMethodsService,
     private readonly stripeService: StripeService,
+    private readonly promotionsService: PromotionsService,
+    private readonly subscriptionsService: SubscriptionsService,
   ) {}
 
   async checkoutAppointment(userId: string, dto: CheckoutAppointmentDto) {
@@ -171,11 +175,11 @@ export class PaymentsService {
     });
 
     if (!payment) {
-      throw new NotFoundException('Pagamento não encontrado.');
+      throw new NotFoundException('Pagamento nÃ£o encontrado.');
     }
 
     if (role !== Role.ADMIN && payment.userId !== userId) {
-      throw new NotFoundException('Pagamento não encontrado.');
+      throw new NotFoundException('Pagamento nÃ£o encontrado.');
     }
 
     return payment;
@@ -187,26 +191,32 @@ export class PaymentsService {
     }
 
     if (!rawBody) {
-      throw new BadRequestException('Payload bruto do webhook não encontrado.');
+      throw new BadRequestException('Payload bruto do webhook nÃ£o encontrado.');
     }
 
     const event = this.stripeService.constructWebhookEvent(rawBody, signature);
 
     switch (event.type) {
       case 'payment_intent.succeeded':
-        await this.handleGatewayPaymentSucceeded(
-          event.data.object,
-        );
+        await this.handleGatewayPaymentSucceeded(event.data.object);
         break;
       case 'payment_intent.payment_failed':
-        await this.handleGatewayPaymentFailed(
-          event.data.object,
-        );
+        await this.handleGatewayPaymentFailed(event.data.object);
         break;
       case 'payment_intent.canceled':
-        await this.handleGatewayPaymentCanceled(
-          event.data.object,
-        );
+        await this.handleGatewayPaymentCanceled(event.data.object);
+        break;
+      case 'invoice.paid':
+        await this.subscriptionsService.handleInvoicePaid(event.data.object);
+        break;
+      case 'invoice.payment_failed':
+        await this.subscriptionsService.handleInvoicePaymentFailed(event.data.object);
+        break;
+      case 'customer.subscription.updated':
+        await this.subscriptionsService.syncSubscriptionFromGateway(event.data.object);
+        break;
+      case 'customer.subscription.deleted':
+        await this.subscriptionsService.expireSubscriptionFromGateway(event.data.object);
         break;
       default:
         break;
@@ -218,11 +228,23 @@ export class PaymentsService {
   private async handleGatewayPaymentSucceeded(paymentIntent: StripeWebhookPaymentIntent) {
     const payment = await this.prisma.payment.findFirst({
       where: { gatewayTransactionId: paymentIntent.id },
-      select: { id: true },
+      select: { id: true, purpose: true },
     });
 
     if (!payment) {
-      throw new NotFoundException('Pagamento não encontrado para este evento.');
+      throw new NotFoundException('Pagamento nÃ£o encontrado para este evento.');
+    }
+
+    if (payment.purpose === 'PLAN_SUBSCRIPTION') {
+      return;
+    }
+
+    if (payment.purpose === 'PROFILE_PROMOTION') {
+      await this.promotionsService.activatePromotionPayment(
+        payment.id,
+        paymentIntent.id,
+      );
+      return;
     }
 
     await this.handlePaymentSucceeded(payment.id, paymentIntent.id);
@@ -231,10 +253,24 @@ export class PaymentsService {
   private async handleGatewayPaymentFailed(paymentIntent: StripeWebhookPaymentIntent) {
     const payment = await this.prisma.payment.findFirst({
       where: { gatewayTransactionId: paymentIntent.id },
-      select: { id: true },
+      select: { id: true, purpose: true },
     });
 
     if (!payment) {
+      return;
+    }
+
+    if (payment.purpose === 'PLAN_SUBSCRIPTION') {
+      return;
+    }
+
+    if (payment.purpose === 'PROFILE_PROMOTION') {
+      await this.promotionsService.markPromotionPaymentFailed(
+        payment.id,
+        paymentIntent.id,
+        paymentIntent.last_payment_error?.message ?? PAYMENT_FAILURE_REASON,
+        'FAILED',
+      );
       return;
     }
 
@@ -249,10 +285,24 @@ export class PaymentsService {
   private async handleGatewayPaymentCanceled(paymentIntent: StripeWebhookPaymentIntent) {
     const payment = await this.prisma.payment.findFirst({
       where: { gatewayTransactionId: paymentIntent.id },
-      select: { id: true },
+      select: { id: true, purpose: true },
     });
 
     if (!payment) {
+      return;
+    }
+
+    if (payment.purpose === 'PLAN_SUBSCRIPTION') {
+      return;
+    }
+
+    if (payment.purpose === 'PROFILE_PROMOTION') {
+      await this.promotionsService.markPromotionPaymentFailed(
+        payment.id,
+        paymentIntent.id,
+        'Pagamento cancelado pelo provedor.',
+        'CANCELED',
+      );
       return;
     }
 
@@ -275,7 +325,7 @@ export class PaymentsService {
     });
 
     if (!currentPayment) {
-      throw new NotFoundException('Pagamento não encontrado.');
+      throw new NotFoundException('Pagamento nÃ£o encontrado.');
     }
 
     if (currentPayment.status === PaymentStatus.APPROVED) {
@@ -336,7 +386,7 @@ export class PaymentsService {
     });
 
     if (!payment) {
-      throw new NotFoundException('Pagamento não encontrado.');
+      throw new NotFoundException('Pagamento nÃ£o encontrado.');
     }
 
     if (payment.status === PaymentStatus.APPROVED) {

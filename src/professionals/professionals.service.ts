@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { PromotionsService } from '@/payments/promotions.service';
 import { UpdateProfessionalProfileDto } from './dto/update-professional-profile.dto';
 import { PrismaService } from '@/prisma/index';
 import {
@@ -41,9 +42,12 @@ export class ProfessionalsService {
   constructor(
     private prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly promotionsService: PromotionsService,
   ) {}
 
   async getProfessionalProfile(userId: string) {
+    await this.promotionsService.syncExpiredPromotions();
+
     const profile = await this.prisma.professionalProfile.findUnique({
       where: { userId },
       include: {
@@ -76,21 +80,27 @@ export class ProfessionalsService {
   }
 
   async getProfessionalsByScoreAvg(page: number, limit: number) {
+    await this.promotionsService.syncExpiredPromotions();
+
     const skip = (page - 1) * limit;
 
     const professionals = await this.prisma.professionalProfile.findMany({
       where: {
         approvalStatus: ProfessionalApprovalStatus.APPROVED,
       },
-      orderBy: {
-        scoreAvg: 'desc',
-      },
+      orderBy: [
+        { isPromoted: 'desc' },
+        { scoreAvg: 'desc' },
+        { reviewCount: 'desc' },
+      ],
       skip,
       take: limit,
       select: {
         userId: true,
         scoreAvg: true,
         reviewCount: true,
+        isPromoted: true,
+        promotionEndsAt: true,
         specialty: true,
         onlineStatus: true,
         user: {
